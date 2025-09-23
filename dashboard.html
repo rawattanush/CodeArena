@@ -403,7 +403,7 @@
             .main-grid {
                 grid-template-columns: 1fr;
             }
-            .games-section, .centered-title[data-original-text="Bored?"] {
+            .games-section, .centered-title.games-section-title {
                 display: none; /* Hide games and title on smaller screens */
             }
              .nav-links {
@@ -446,7 +446,7 @@
             <div class="header-content">
                 <div class="logo">
                     <i class="fas fa-code" style="color: var(--accent-green);"></i>
-                    Code<span>Arena</span>
+                    <a href="index.html" style="color: var(--text-primary);">Code<span>Arena</span></a>
                 </div>
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <i class="fas fa-bars"></i>
@@ -462,7 +462,7 @@
                         <i class="fas fa-bell"></i>
                         <span class="badge">3</span>
                     </button>
-                    <a href="profile.html"<div class="avatar" id="userAvatar">SB</div></a>
+                    <a href="profile.html" class="avatar" id="userAvatar"></a>
                 </div>
             </div>
         </div>
@@ -486,9 +486,9 @@
             <span>Notifications</span>
             <span class="badge" style="position: static; margin-left: auto;">3</span>
         </a>
-        <a href="profile.html" class="mobile-nav-item">
-            <span> class="avatar" style="position: static; width: 30px; height: 30px;">SB</span>
-            <span>snowybacon</span>
+        <a href="profile.html" class="mobile-nav-item" id="mobile-user-profile">
+            <div class="avatar" id="mobile-avatar" style="position: static; width: 30px; height: 30px;"></div>
+            <span id="mobile-user-handle"></span>
         </a>
     </div>
 
@@ -497,7 +497,7 @@
             <h2 class="section-title" data-original-text="Overview"><i class="fas fa-chart-line"></i>// Overview</h2>
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Welcome back, snowybacon!</h3>
+                    <h3 class="card-title" id="welcome-message"></h3>
                     <span>Last updated: Today, 10:45 AM</span>
                 </div>
                 <div class="card-content">
@@ -761,11 +761,11 @@
     <footer>
         <div class="container">
             <div class="footer-content" style="text-align:center;">
-                <div class="footer-logo">
+                <div class="footer-logo" style="justify-content: center;">
                     <i class="fas fa-code" style="color:var(--accent-green)"></i>
                     Code<span>Arena</span>
                 </div>
-                <div class="footer-links">
+                <div class="footer-links" style="justify-content: center;">
                     <a href="#">Home</a><a href="#">Dashboard</a><a href="#">Problems</a><a href="#">Contests</a>
                     <a href="#">Blog</a><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a>
                 </div>
@@ -780,6 +780,55 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Authentication and User Personalization ---
+            const handleAuthAndPersonalization = () => {
+                let handle = localStorage.getItem('cf_handle');
+                const isVerified = localStorage.getItem('cf_verified') === 'true';
+
+                // If not authenticated, redirect to the landing page.
+                // In a real app, this redirect would be active. For demo, we default to 'snowybacon'.
+                if (!handle || !isVerified) {
+                    handle = 'snowybacon'; // Fallback for direct viewing
+                    // window.location.href = 'index.html'; // Enable this for a real application
+                }
+                
+                personalizePage(handle);
+            };
+
+            const personalizePage = (handle) => {
+                // Helper to get initials from a handle
+                const getInitials = (name) => {
+                    if (!name) return '';
+                    const parts = name.split(/[_.-]/).filter(Boolean);
+                    if (parts.length > 1) {
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                    } else if (name.length > 1) {
+                        return (name[0] + name[1]).toUpperCase();
+                    }
+                    return (name[0] || '').toUpperCase();
+                };
+
+                const initials = getInitials(handle);
+
+                // Update Desktop Header
+                const userAvatar = document.getElementById('userAvatar');
+                if (userAvatar) userAvatar.textContent = initials;
+
+                // Update Mobile Nav
+                const mobileAvatar = document.getElementById('mobile-avatar');
+                const mobileUserHandle = document.getElementById('mobile-user-handle');
+                if (mobileAvatar) mobileAvatar.textContent = initials;
+                if (mobileUserHandle) mobileUserHandle.textContent = handle;
+                
+                // Update Welcome Message
+                const welcomeMessage = document.getElementById('welcome-message');
+                if (welcomeMessage) welcomeMessage.textContent = `Welcome back, ${handle}!`;
+            };
+            
+            // Run the auth check first thing
+            handleAuthAndPersonalization();
+
+
             // --- Matrix-style background from home3.html ---
             const canvas = document.getElementById('background-canvas');
             const ctx = canvas.getContext('2d');
@@ -1011,260 +1060,264 @@
 
             // --- Snake Game Logic ---
             const gameCanvas = document.getElementById('game-canvas');
-            const gameCtx = gameCanvas.getContext('2d');
-            const scoreElement = document.getElementById('game-score');
-            const startBtn = document.getElementById('start-game-btn');
-            const resetBtn = document.getElementById('reset-game-btn');
-            
-            const gridSize = 20;
-            let snake = [{ x: 10, y: 10 }];
-            let apple = { x: 15, y: 15 };
-            let velocity = { x: 0, y: 0 };
-            let score = 0;
-            let gameInterval = null;
+            if (gameCanvas) { // Check if game exists before running logic
+                const gameCtx = gameCanvas.getContext('2d');
+                const scoreElement = document.getElementById('game-score');
+                const startBtn = document.getElementById('start-game-btn');
+                const resetBtn = document.getElementById('reset-game-btn');
+                
+                const gridSize = 20;
+                let snake = [{ x: 10, y: 10 }];
+                let apple = { x: 15, y: 15 };
+                let velocity = { x: 0, y: 0 };
+                let score = 0;
+                let gameInterval = null;
 
-            function drawGameObjects() {
-                gameCtx.fillStyle = '#000';
-                gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+                function drawGameObjects() {
+                    gameCtx.fillStyle = '#000';
+                    gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-                gameCtx.fillStyle = 'red';
-                gameCtx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize - 2, gridSize - 2);
+                    gameCtx.fillStyle = 'red';
+                    gameCtx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize - 2, gridSize - 2);
 
-                gameCtx.fillStyle = 'lime';
-                snake.forEach(segment => {
-                    gameCtx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
-                });
-            }
+                    gameCtx.fillStyle = 'lime';
+                    snake.forEach(segment => {
+                        gameCtx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+                    });
+                }
 
-            function updateGame() {
-                const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
-                if (head.x < 0 || head.x >= gameCanvas.width / gridSize || head.y < 0 || head.y >= gameCanvas.height / gridSize) { return resetGame(); }
-                for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) { return resetGame(); } }
-                snake.unshift(head);
-                if (head.x === apple.x && head.y === apple.y) {
-                    score++;
+                function updateGame() {
+                    const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+                    if (head.x < 0 || head.x >= gameCanvas.width / gridSize || head.y < 0 || head.y >= gameCanvas.height / gridSize) { return resetGame(); }
+                    for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) { return resetGame(); } }
+                    snake.unshift(head);
+                    if (head.x === apple.x && head.y === apple.y) {
+                        score++;
+                        scoreElement.textContent = score;
+                        placeApple();
+                    } else { snake.pop(); }
+                    drawGameObjects();
+                }
+                
+                function placeApple() {
+                    apple.x = Math.floor(Math.random() * (gameCanvas.width / gridSize));
+                    apple.y = Math.floor(Math.random() * (gameCanvas.height / gridSize));
+                }
+
+                function startGame() {
+                    if (gameInterval) return;
+                    if(velocity.x === 0 && velocity.y === 0) velocity = { x: 1, y: 0 };
+                    gameInterval = setInterval(updateGame, 100);
+                }
+                
+                function resetGame() {
+                    clearInterval(gameInterval);
+                    gameInterval = null;
+                    snake = [{ x: 10, y: 10 }];
+                    velocity = { x: 0, y: 0 };
+                    score = 0;
                     scoreElement.textContent = score;
                     placeApple();
-                } else { snake.pop(); }
-                drawGameObjects();
-            }
-            
-            function placeApple() {
-                apple.x = Math.floor(Math.random() * (gameCanvas.width / gridSize));
-                apple.y = Math.floor(Math.random() * (gameCanvas.height / gridSize));
-            }
-
-            function startGame() {
-                if (gameInterval) return;
-                if(velocity.x === 0 && velocity.y === 0) velocity = { x: 1, y: 0 };
-                gameInterval = setInterval(updateGame, 100);
-            }
-            
-            function resetGame() {
-                clearInterval(gameInterval);
-                gameInterval = null;
-                snake = [{ x: 10, y: 10 }];
-                velocity = { x: 0, y: 0 };
-                score = 0;
-                scoreElement.textContent = score;
-                placeApple();
-                drawGameObjects();
-            }
-            
-            startBtn.addEventListener('click', startGame);
-            resetBtn.addEventListener('click', resetGame);
-            
-            window.addEventListener('keydown', e => {
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
-                    e.preventDefault();
+                    drawGameObjects();
                 }
-                switch (e.key.toLowerCase()) {
-                    case 'arrowup': case 'w': if (velocity.y === 0) velocity = { x: 0, y: -1 }; break;
-                    case 'arrowdown': case 's': if (velocity.y === 0) velocity = { x: 0, y: 1 }; break;
-                    case 'arrowleft': case 'a': if (velocity.x === 0) velocity = { x: -1, y: 0 }; break;
-                    case 'arrowright': case 'd': if (velocity.x === 0) velocity = { x: 1, y: 0 }; break;
-                }
-            });
-            
-            resetGame(); 
+                
+                startBtn.addEventListener('click', startGame);
+                resetBtn.addEventListener('click', resetGame);
+                
+                window.addEventListener('keydown', e => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                    switch (e.key.toLowerCase()) {
+                        case 'arrowup': case 'w': if (velocity.y === 0) velocity = { x: 0, y: -1 }; break;
+                        case 'arrowdown': case 's': if (velocity.y === 0) velocity = { x: 0, y: 1 }; break;
+                        case 'arrowleft': case 'a': if (velocity.x === 0) velocity = { x: -1, y: 0 }; break;
+                        case 'arrowright': case 'd': if (velocity.x === 0) velocity = { x: 1, y: 0 }; break;
+                    }
+                });
+                
+                resetGame(); 
+            }
             
             // --- Tower of Hanoi Logic ---
             const hanoiCanvas = document.getElementById('hanoi-canvas');
-            const hanoiCtx = hanoiCanvas.getContext('2d');
-            const movesElement = document.getElementById('hanoi-moves');
-            const diskSelect = document.getElementById('disk-count');
-            const resetHanoiBtn = document.getElementById('reset-hanoi-btn');
-            const towerButtons = document.querySelectorAll('.hanoi-tower-btn');
-            
-            let numDisks = 5;
-            let towers = [[], [], []];
-            let selectedDisk = null;
-            let fromTower = -1;
-            let moves = 0;
-            let gameWon = false;
-            const diskHeight = 15;
-            const towerX = [hanoiCanvas.width / 4, hanoiCanvas.width / 2, hanoiCanvas.width * 3 / 4];
-            const towerBaseY = hanoiCanvas.height - 20; // Adjusted for button space
-            const diskColors = ['#00ff9c', '#00a2ff', '#d96dff', '#ffc83c', '#ff3c3c', '#55ddec', '#e0e0e0'];
-            let hanoiDiskPatterns = [];
-            let shuffledColors = [];
-
-            function createHanoiPatterns() {
-                hanoiDiskPatterns = [];
-                shuffledColors = [...diskColors].sort(() => Math.random() - 0.5);
-
-                shuffledColors.forEach(color => {
-                    const patternCanvas = document.createElement('canvas');
-                    const patternCtx = patternCanvas.getContext('2d');
-                    patternCanvas.width = 8; patternCanvas.height = 8;
-                    patternCtx.fillStyle = '#0a0a0a';
-                    patternCtx.fillRect(0,0,8,8);
-                    patternCtx.strokeStyle = color;
-                    patternCtx.lineWidth = 1;
-                    patternCtx.beginPath();
-                    patternCtx.moveTo(0, 8);
-                    patternCtx.lineTo(8, 0);
-                    patternCtx.stroke();
-                    hanoiDiskPatterns.push(hanoiCtx.createPattern(patternCanvas, 'repeat'));
-                });
-            }
-
-            function initHanoi() {
-                moves = 0;
-                gameWon = false;
-                movesElement.textContent = moves;
-                towers = [[], [], []];
-                numDisks = parseInt(diskSelect.value);
+            if (hanoiCanvas) { // Check if game exists
+                const hanoiCtx = hanoiCanvas.getContext('2d');
+                const movesElement = document.getElementById('hanoi-moves');
+                const diskSelect = document.getElementById('disk-count');
+                const resetHanoiBtn = document.getElementById('reset-hanoi-btn');
+                const towerButtons = document.querySelectorAll('.hanoi-tower-btn');
                 
-                for (let i = numDisks; i >= 1; i--) {
-                    towers[0].push(i);
+                let numDisks = 5;
+                let towers = [[], [], []];
+                let selectedDisk = null;
+                let fromTower = -1;
+                let moves = 0;
+                let gameWon = false;
+                const diskHeight = 15;
+                const towerX = [hanoiCanvas.width / 4, hanoiCanvas.width / 2, hanoiCanvas.width * 3 / 4];
+                const towerBaseY = hanoiCanvas.height - 20; // Adjusted for button space
+                const diskColors = ['#00ff9c', '#00a2ff', '#d96dff', '#ffc83c', '#ff3c3c', '#55ddec', '#e0e0e0'];
+                let hanoiDiskPatterns = [];
+                let shuffledColors = [];
+
+                function createHanoiPatterns() {
+                    hanoiDiskPatterns = [];
+                    shuffledColors = [...diskColors].sort(() => Math.random() - 0.5);
+
+                    shuffledColors.forEach(color => {
+                        const patternCanvas = document.createElement('canvas');
+                        const patternCtx = patternCanvas.getContext('2d');
+                        patternCanvas.width = 8; patternCanvas.height = 8;
+                        patternCtx.fillStyle = '#0a0a0a';
+                        patternCtx.fillRect(0,0,8,8);
+                        patternCtx.strokeStyle = color;
+                        patternCtx.lineWidth = 1;
+                        patternCtx.beginPath();
+                        patternCtx.moveTo(0, 8);
+                        patternCtx.lineTo(8, 0);
+                        patternCtx.stroke();
+                        hanoiDiskPatterns.push(hanoiCtx.createPattern(patternCanvas, 'repeat'));
+                    });
                 }
+
+                function initHanoi() {
+                    moves = 0;
+                    gameWon = false;
+                    movesElement.textContent = moves;
+                    towers = [[], [], []];
+                    numDisks = parseInt(diskSelect.value);
+                    
+                    for (let i = numDisks; i >= 1; i--) {
+                        towers[0].push(i);
+                    }
+                    
+                    selectedDisk = null;
+                    fromTower = -1;
+                    towerButtons.forEach(btn => btn.classList.remove('selected'));
+                    createHanoiPatterns();
+                    drawHanoi();
+                }
+
+                function drawHanoi() {
+                    hanoiCtx.fillStyle = '#0a0a0a';
+                    hanoiCtx.fillRect(0, 0, hanoiCanvas.width, hanoiCanvas.height);
                 
-                selectedDisk = null;
-                fromTower = -1;
-                towerButtons.forEach(btn => btn.classList.remove('selected'));
-                createHanoiPatterns();
-                drawHanoi();
-            }
-
-            function drawHanoi() {
-                hanoiCtx.fillStyle = '#0a0a0a';
-                hanoiCtx.fillRect(0, 0, hanoiCanvas.width, hanoiCanvas.height);
-               
-                hanoiCtx.strokeStyle = 'var(--accent-blue)';
-                hanoiCtx.shadowColor = 'var(--accent-blue)';
-                hanoiCtx.shadowBlur = 10;
-                hanoiCtx.lineWidth = 3;
-                towerX.forEach(x => {
+                    hanoiCtx.strokeStyle = 'var(--accent-blue)';
+                    hanoiCtx.shadowColor = 'var(--accent-blue)';
+                    hanoiCtx.shadowBlur = 10;
+                    hanoiCtx.lineWidth = 3;
+                    towerX.forEach(x => {
+                        hanoiCtx.beginPath();
+                        hanoiCtx.moveTo(x, 30);
+                        hanoiCtx.lineTo(x, towerBaseY);
+                        hanoiCtx.stroke();
+                    });
                     hanoiCtx.beginPath();
-                    hanoiCtx.moveTo(x, 30);
-                    hanoiCtx.lineTo(x, towerBaseY);
+                    hanoiCtx.moveTo(20, towerBaseY);
+                    hanoiCtx.lineTo(hanoiCanvas.width - 20, towerBaseY);
                     hanoiCtx.stroke();
-                });
-                hanoiCtx.beginPath();
-                hanoiCtx.moveTo(20, towerBaseY);
-                hanoiCtx.lineTo(hanoiCanvas.width - 20, towerBaseY);
-                hanoiCtx.stroke();
-                hanoiCtx.shadowBlur = 0;
+                    hanoiCtx.shadowBlur = 0;
 
-                towers.forEach((tower, towerIndex) => {
-                    tower.forEach((diskSize, diskIndex) => {
-                        const diskWidth = diskSize * 14 + 20;
-                        const x = towerX[towerIndex] - diskWidth / 2;
-                        const y = towerBaseY - (diskIndex + 1) * diskHeight;
+                    towers.forEach((tower, towerIndex) => {
+                        tower.forEach((diskSize, diskIndex) => {
+                            const diskWidth = diskSize * 14 + 20;
+                            const x = towerX[towerIndex] - diskWidth / 2;
+                            const y = towerBaseY - (diskIndex + 1) * diskHeight;
+                            
+                            hanoiCtx.fillStyle = hanoiDiskPatterns[diskSize - 1] || '#ccc';
+                            hanoiCtx.fillRect(x, y, diskWidth, diskHeight);
+                            
+                            hanoiCtx.strokeStyle = shuffledColors[diskSize - 1] || '#fff';
+                            hanoiCtx.lineWidth = 2;
+                            hanoiCtx.strokeRect(x, y, diskWidth, diskHeight);
+                        });
+                    });
+                    
+                    if (selectedDisk) {
+                        const diskWidth = selectedDisk * 14 + 20;
+                        const x = (hanoiCanvas.width / 2) - (diskWidth / 2);
+                        const y = 5;
                         
-                        hanoiCtx.fillStyle = hanoiDiskPatterns[diskSize - 1] || '#ccc';
-                        hanoiCtx.fillRect(x, y, diskWidth, diskHeight);
+                        hanoiCtx.fillStyle = 'var(--accent-yellow)';
+                        hanoiCtx.font = '12px var(--font-mono)';
+                        hanoiCtx.textAlign = 'center';
+                        hanoiCtx.fillText(`[Holding Disk ${selectedDisk}]`, hanoiCanvas.width / 2, 12);
                         
-                        hanoiCtx.strokeStyle = shuffledColors[diskSize - 1] || '#fff';
-                        hanoiCtx.lineWidth = 2;
-                        hanoiCtx.strokeRect(x, y, diskWidth, diskHeight);
+                        hanoiCtx.fillStyle = hanoiDiskPatterns[selectedDisk - 1];
+                        hanoiCtx.strokeStyle = shuffledColors[selectedDisk - 1];
+                        hanoiCtx.shadowColor = shuffledColors[selectedDisk - 1];
+                        hanoiCtx.shadowBlur = 25;
+                        hanoiCtx.fillRect(x, y + 10, diskWidth, diskHeight);
+                        hanoiCtx.strokeRect(x, y + 10, diskWidth, diskHeight);
+                        hanoiCtx.shadowBlur = 0;
+                    }
+                }
+
+                function handleTowerClick(towerIndex) {
+                    if (gameWon) return;
+
+                    if (selectedDisk === null) {
+                        // Trying to pick up a disk
+                        if (towers[towerIndex].length > 0) {
+                            selectedDisk = towers[towerIndex].pop();
+                            fromTower = towerIndex;
+                            towerButtons[fromTower].classList.add('selected');
+                        }
+                    } else {
+                        // Trying to place a disk
+                        const targetTower = towers[towerIndex];
+                        if (targetTower.length === 0 || targetTower[targetTower.length - 1] > selectedDisk) {
+                            // Valid move
+                            targetTower.push(selectedDisk);
+                            if (fromTower !== towerIndex) {
+                                moves++;
+                                movesElement.textContent = moves;
+                            }
+                        } else {
+                            // Invalid move, return disk to original tower
+                            towers[fromTower].push(selectedDisk);
+                        }
+                        
+                        // Reset selection state
+                        towerButtons[fromTower].classList.remove('selected');
+                        selectedDisk = null;
+                        fromTower = -1;
+                    }
+
+                    drawHanoi();
+                    checkWin();
+                }
+
+                towerButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const towerIndex = parseInt(button.dataset.tower);
+                        handleTowerClick(towerIndex);
                     });
                 });
                 
-                if (selectedDisk) {
-                     const diskWidth = selectedDisk * 14 + 20;
-                     const x = (hanoiCanvas.width / 2) - (diskWidth / 2);
-                     const y = 5;
-                     
-                     hanoiCtx.fillStyle = 'var(--accent-yellow)';
-                     hanoiCtx.font = '12px var(--font-mono)';
-                     hanoiCtx.textAlign = 'center';
-                     hanoiCtx.fillText(`[Holding Disk ${selectedDisk}]`, hanoiCanvas.width / 2, 12);
-                     
-                     hanoiCtx.fillStyle = hanoiDiskPatterns[selectedDisk - 1];
-                     hanoiCtx.strokeStyle = shuffledColors[selectedDisk - 1];
-                     hanoiCtx.shadowColor = shuffledColors[selectedDisk - 1];
-                     hanoiCtx.shadowBlur = 25;
-                     hanoiCtx.fillRect(x, y + 10, diskWidth, diskHeight);
-                     hanoiCtx.strokeRect(x, y + 10, diskWidth, diskHeight);
-                     hanoiCtx.shadowBlur = 0;
-                }
-            }
-
-            function handleTowerClick(towerIndex) {
-                if (gameWon) return;
-
-                if (selectedDisk === null) {
-                    // Trying to pick up a disk
-                    if (towers[towerIndex].length > 0) {
-                        selectedDisk = towers[towerIndex].pop();
-                        fromTower = towerIndex;
-                        towerButtons[fromTower].classList.add('selected');
+                function checkWin() {
+                    if (towers[1].length === numDisks || towers[2].length === numDisks) {
+                        gameWon = true;
+                        towerButtons.forEach(btn => btn.classList.remove('selected'));
+                        hanoiCtx.fillStyle = 'var(--accent-green)';
+                        hanoiCtx.shadowColor = 'var(--accent-green)';
+                        hanoiCtx.shadowBlur = 20;
+                        hanoiCtx.font = '24px var(--font-mono)';
+                        hanoiCtx.textAlign = 'center';
+                        hanoiCtx.fillText('// SOLVED', hanoiCanvas.width / 2, hanoiCanvas.height / 3);
+                        hanoiCtx.shadowBlur = 0;
+                        
+                        selectedDisk = null;
+                        fromTower = -1;
                     }
-                } else {
-                    // Trying to place a disk
-                    const targetTower = towers[towerIndex];
-                    if (targetTower.length === 0 || targetTower[targetTower.length - 1] > selectedDisk) {
-                        // Valid move
-                        targetTower.push(selectedDisk);
-                        if (fromTower !== towerIndex) {
-                            moves++;
-                            movesElement.textContent = moves;
-                        }
-                    } else {
-                        // Invalid move, return disk to original tower
-                        towers[fromTower].push(selectedDisk);
-                    }
-                    
-                    // Reset selection state
-                    towerButtons[fromTower].classList.remove('selected');
-                    selectedDisk = null;
-                    fromTower = -1;
                 }
-
-                drawHanoi();
-                checkWin();
+                
+                diskSelect.addEventListener('change', initHanoi);
+                resetHanoiBtn.addEventListener('click', initHanoi);
+                
+                initHanoi();
             }
-
-            towerButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const towerIndex = parseInt(button.dataset.tower);
-                    handleTowerClick(towerIndex);
-                });
-            });
-            
-            function checkWin() {
-                if (towers[1].length === numDisks || towers[2].length === numDisks) {
-                    gameWon = true;
-                    towerButtons.forEach(btn => btn.classList.remove('selected'));
-                    hanoiCtx.fillStyle = 'var(--accent-green)';
-                    hanoiCtx.shadowColor = 'var(--accent-green)';
-                    hanoiCtx.shadowBlur = 20;
-                    hanoiCtx.font = '24px var(--font-mono)';
-                    hanoiCtx.textAlign = 'center';
-                    hanoiCtx.fillText('// SOLVED', hanoiCanvas.width / 2, hanoiCanvas.height / 3);
-                    hanoiCtx.shadowBlur = 0;
-                    
-                    selectedDisk = null;
-                    fromTower = -1;
-                }
-            }
-            
-            diskSelect.addEventListener('change', initHanoi);
-            resetHanoiBtn.addEventListener('click', initHanoi);
-            
-            initHanoi();
 
             // Mobile Menu Logic
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -1276,6 +1329,3 @@
     </script>
 </body>
 </html>
-
-
-
