@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeArena - The Hub for AlgoGym Community</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --dark-bg: #0a0a0a;
+            --primary-bg: #101010;
+            --secondary-bg: #1a1a1a;
+            --border-color: #2a2a2a;
+            --accent-green: #00ff9c;
+            --accent-blue: #00a2ff;
+            --accent-glow: rgba(0, 255, 156, 0.2);
+            --text-primary: #e0e0e0;
+            --text-secondary: #888888;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --shadow: 0 0 20px rgba(0, 255, 156, 0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Nerdy Add-on: CRT Scanline & Flicker Overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0px, rgba(0, 0, 0, 0.3) 1px, transparent 1px, transparent 3px);
+            opacity: 0.5;
+            z-index: 9999;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0%   { opacity: 0.4; }
+            20%  { opacity: 0.6; }
+            40%  { opacity: 0.4; }
+            60%  { opacity: 0.7; }
+            80%  { opacity: 0.4; }
+            100% { opacity: 0.6; }
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        h1, h2, h3 { font-family: var(--font-mono); color: var(--text-primary); font-weight: 700; }
+        a { text-decoration: none; color: var(--accent-green); transition: var(--transition); }
+        a:hover { filter: brightness(1.2); }
+
+        .background-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; opacity: 0.2;
+        }
+
+        header {
+            background-color: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+        nav { display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo { font-family: var(--font-mono); font-size: 1.5rem; color: var(--text-primary); position: relative; }
+        .logo span { color: var(--accent-green); }
+        .logo:hover { animation: glitch 0.3s linear infinite; }
+
+        @keyframes glitch {
+            0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); } 100% { transform: translate(0); }
+        }
+
+        .nav-links { display: none; gap: 30px; }
+        @media (min-width: 992px) { .nav-links { display: flex; } }
+        .nav-links a { color: var(--text-secondary); font-weight: 500; font-size: 0.9rem; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-actions { display: flex; align-items: center; gap: 15px; }
+
+        .binary-clock {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-menu-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary); display: block; }
+        @media (min-width: 992px) { .mobile-menu-btn { display: none; } }
+        .mobile-nav {
+            display: none; flex-direction: column; gap: 10px; background-color: var(--primary-bg);
+            padding: 20px; position: fixed; top: 70px; left: 0; width: 100%;
+            border-bottom: 1px solid var(--border-color); z-index: 999;
+            transform: translateY(-100%); transition: transform 0.3s ease-in-out;
+        }
+        .mobile-nav.active { display: flex; transform: translateY(0); }
+        .mobile-nav a { color: var(--text-primary); font-weight: 500; padding: 10px; border-radius: 4px; }
+        .mobile-nav a:hover { background-color: var(--secondary-bg); }
+
+        /* Nerdy Add-on: Glitching Buttons */
+        .btn {
+            padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer;
+            text-decoration: none; display: inline-block; border: 1px solid var(--accent-green);
+            font-size: 1rem; position: relative; overflow: hidden; background: transparent;
+            color: var(--accent-green); font-family: var(--font-mono); transition: none;
+        }
+        .btn:hover { color: var(--accent-green); }
+
+        .btn::before, .btn::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: var(--dark-bg);
+            overflow: hidden; clip-path: inset(0);
+        }
+        .btn::before {
+            left: 2px; text-shadow: -1px 0 var(--accent-green);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+        .btn::after {
+            left: -2px; text-shadow: -1px 0 var(--accent-glow), 1px 0 #ff00c1;
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+        .btn-primary { background-color: var(--accent-green); color: var(--dark-bg); }
+        .btn-primary:hover { background-color: var(--accent-green); }
+        .btn-secondary:hover { background-color: var(--accent-glow); color: var(--text-primary); }
+
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(30% 0 60% 0); } 20% { clip-path: inset(90% 0 1% 0); }
+            40% { clip-path: inset(50% 0 45% 0); } 60% { clip-path: inset(10% 0 85% 0); }
+            80% { clip-path: inset(80% 0 5% 0); } 100% { clip-path: inset(40% 0 40% 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(80% 0 5% 0); } 20% { clip-path: inset(40% 0 40% 0); }
+            40% { clip-path: inset(90% 0 1% 0); } 60% { clip-path: inset(30% 0 60% 0); }
+            80% { clip-path: inset(10% 0 85% 0); } 100% { clip-path: inset(50% 0 45% 0); }
+        }
+
+        .hero {
+            padding: 140px 0 80px; text-align: center; display: flex;
+            flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        .hero h1 { font-size: clamp(2.5rem, 5vw, 3.5rem); margin-bottom: 20px; line-height: 1.2; min-height: 115px; }
+        .hero h1 .typewriter-cursor { color: var(--accent-green); animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .hero p { font-size: clamp(1rem, 2.5vw, 1.2rem); color: var(--text-secondary); max-width: 700px; margin: 0 auto 40px; }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .hero-graphic { width: 100%; max-width: 600px; margin-bottom: 2rem; }
+
+        .section { padding: 80px 0; }
+        .section-title { text-align: center; margin-bottom: 50px; font-size: clamp(1.8rem, 4vw, 2.2rem); }
+
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+        .feature-card {
+            background-color: var(--primary-bg); border-radius: 8px; padding: 30px;
+            border: 1px solid var(--border-color); transition: var(--transition);
+        }
+        .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-green); box-shadow: var(--shadow); }
+        .feature-icon { font-size: 2.5rem; color: var(--accent-green); margin-bottom: 20px; }
+        .feature-card h3 { font-size: 1.5rem; margin-bottom: 15px; }
+        .feature-card p { color: var(--text-secondary); }
+        
+        .community-section { background-color: var(--primary-bg); }
+        .community-content { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 3rem; }
+        
+        .community-text h3 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .community-text p { color: var(--text-secondary); margin-bottom: 1.5rem; }
+        .community-graphic {
+            background: var(--secondary-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 2rem; text-align: center;
+        }
+        .community-graphic i { font-size: 4rem; color: var(--accent-green); }
+        .community-graphic p { font-family: var(--font-mono); margin-top: 1rem; }
+
+        .training-card-container { perspective: 1000px; }
+        .training-card {
+            width: 100%; height: 250px; position: relative;
+            transition: transform 0.8s; transform-style: preserve-3d;
+        }
+        .training-card-container:hover .training-card { transform: rotateY(180deg); }
+        .training-card-front, .training-card-back {
+            position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden;
+            backface-visibility: hidden; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px;
+            background: var(--primary-bg); border: 1px solid var(--border-color); border-radius: 8px;
+        }
+        .training-card-back { transform: rotateY(180deg); }
+        .training-card-back p { font-size: 0.9rem; }
+
+        .leaderboard-preview { background-color: var(--primary-bg); }
+        .podium { display: flex; justify-content: center; align-items: flex-end; gap: 1rem; }
+        .podium-item { text-align: center; }
+        .podium-rank { font-size: 2rem; font-family: var(--font-mono); }
+        .podium-rank-1 { color: #ffd700; } .podium-rank-2 { color: #c0c0c0; } .podium-rank-3 { color: #cd7f32; }
+        .podium-avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--border-color); margin: 0.5rem 0; }
+        .podium-item.rank-2 .podium-avatar { width: 80px; height: 80px; }
+        .podium-item.rank-3 .podium-avatar { width: 70px; height: 70px; }
+        .podium-handle { font-weight: 600; }
+        .podium-rating { font-size: 0.9rem; color: var(--text-secondary); }
+
+        .testimonials { background-color: var(--primary-bg); }
+        .testimonial-card {
+            background-color: var(--secondary-bg); padding: 2rem;
+            border-left: 4px solid var(--accent-green); border-radius: 4px;
+        }
+        .testimonial-card p { font-style: italic; color: var(--text-secondary); margin-bottom: 1.5rem; }
+        .testimonial-author { font-weight: 600; color: var(--text-primary); }
+        .testimonial-author span { color: var(--text-secondary); font-weight: 400; font-size: 0.9rem; }
+
+        .cta { text-align: center; }
+        .cta .btn { font-size: 1.2rem; padding: 12px 24px; font-family: var(--font-mono); }
+
+        footer { background-color: var(--primary-bg); color: var(--text-secondary); padding: 4rem 0 2rem; border-top: 1px solid var(--border-color); }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
+        .footer-about p { margin: 1rem 0; font-size: 0.9rem; }
+        .social-links a { color: var(--text-secondary); font-size: 1.5rem; margin-right: 1rem; }
+        .social-links a:hover { color: var(--accent-green); }
+        .footer-links h3 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-primary); }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 0.5rem; }
+        .footer-links a { color: var(--text-secondary); font-size: 0.9rem; }
+        .copyright { text-align: center; font-size: 0.9rem; padding-top: 2rem; border-top: 1px solid var(--border-color); }
+
+        /* Modal styles */
+        .modal {
+            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--primary-bg); margin: auto; padding: 2rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            width: 90%; max-width: 500px; position: relative; box-shadow: var(--shadow);
+            font-family: var(--font-mono);
+        }
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h2 {
+            color: var(--accent-green);
+            font-size: 1.5rem;
+        }
+        .close-modal {
+            position: absolute; top: 1rem; right: 1rem; color: var(--text-secondary);
+            background: none; border: none; font-size: 1.5rem; cursor: pointer;
+        }
+        .form-group { margin: 1.5rem 0; }
+        .form-group input {
+            width: 100%; padding: 12px; background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color); border-radius: 4px;
+            color: var(--text-primary); font-family: var(--font-mono); margin-bottom: 1rem;
+        }
+        #verification-status { text-align: center; margin: 1.5rem 0; }
+        .countdown { font-family: var(--font-mono); color: var(--accent-green); margin-bottom: 1rem; text-align: center; }
+        .verification-instructions { background-color: var(--secondary-bg); padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; }
+        .verification-instructions ol { padding-left: 1.5rem; margin-top: 0.5rem; }
+        .spinner {
+            border: 3px solid var(--border-color); border-top: 3px solid var(--accent-green);
+            border-radius: 50%; width: 30px; height: 30px;
+            animation: spin 1s linear infinite; margin: 0 auto 1rem;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .fade-in-section { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
+        
+        /* Nerdy Add-on: Boot Sequence Styles */
+        #boot-sequence {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark-bg); z-index: 10000;
+            display: flex; align-items: flex-start; justify-content: flex-start;
+            transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+        }
+        #boot-text {
+            font-family: var(--font-mono); color: var(--accent-green);
+            font-size: 0.9rem; padding: 2rem; white-space: pre-wrap; word-break: break-all;
+        }
+
+        /* Terminal-like styling for modals */
+        .terminal-line {
+            color: var(--accent-green);
+            margin-bottom: 0.5rem;
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: var(--accent-green);
+            font-family: var(--font-mono);
+            width: 100%;
+            outline: none;
+            caret-color: var(--accent-green);
+        }
+        .terminal-prompt {
+            color: var(--accent-blue);
+            margin-right: 0.5rem;
+        }
+
+        /* Responsive Styles for Mobile Squeezing */
+        @media (max-width: 768px) {
+            .community-content { grid-template-columns: 1fr; }
+            .podium { flex-direction: column; align-items: center; gap: 2rem; }
+            .podium-item.rank-1 { order: -1; }
+            .podium-item.rank-2 { order: 0; }
+            .podium-item.rank-3 { order: 1; }
+            .podium-avatar { width: 100px !important; height: 100px !important; }
+            .binary-clock { display: none; }
+        }
+        @media (max-width: 576px) {
+            .section { padding: 60px 0; }
+            .btn { padding: 8px 16px; font-size: 0.9rem; }
+            .features-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Nerdy Add-on: Boot Sequence Markup -->
+    <div id="boot-sequence">
+        <pre id="boot-text"></pre>
+    </div>
+
+    <canvas class="background-canvas" id="background-canvas"></canvas>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">Code<span>Arena</span></a>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#community">Community Hubs</a>
+                    <a href="#regimen">Training</a>
+                    <a href="#spar">Leaderboards</a>
+                </div>
+                <div class="nav-actions">
+                    <div class="binary-clock" id="binary-clock">1010:1101:0011</div>
+                    <button class="btn btn-secondary" id="dashboard-link" data-text="Login">Login</button>
+                    <button class="mobile-menu-btn"><i class="fas fa-bars"></i></button>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <div class="mobile-nav">
+        <a href="#features">Features</a>
+        <a href="#community">Community Hubs</a>
+        <a href="#regimen">Training</a>
+        <a href="#spar">Leaderboards</a>
+    </div>
+
+    <section class="hero fade-in-section is-visible">
+        <div class="container">
+             <!-- Nerdy Add-on: Animated Circuit Board Graphic -->
+             <div class="hero-graphic">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <style>
+                            .pcb-trace { stroke-width: 0.5; stroke: var(--border-color); fill: none; }
+                            .pcb-flow {
+                                stroke-width: 0.7; stroke: var(--accent-green); fill: none;
+                                stroke-dasharray: 5; animation: flow 4s linear infinite;
+                            }
+                            .pcb-node {
+                                fill: var(--accent-green); stroke: var(--accent-glow);
+                                stroke-width: 1; animation: node-pulse 2s infinite alternate;
+                            }
+                            @keyframes flow { to { stroke-dashoffset: -20; } }
+                            @keyframes node-pulse { to { r: 1.5; filter: brightness(2); } }
+                        </style>
+                    </defs>
+                    <path class="pcb-trace" d="M 5 5 H 95 V 95 H 5 Z" />
+                    <path class="pcb-trace" d="M 20 20 H 80 V 80 H 20 Z" />
+                    <path class="pcb-trace" d="M 10 50 H 90 M 50 10 V 90" />
+                    <path class="pcb-flow" d="M 10 10 L 40 10 L 50 20 L 50 40 L 40 50" />
+                    <path class="pcb-flow" style="animation-delay: -1s;" d="M 90 90 L 60 90 L 50 80 L 50 60 L 60 50" />
+                    <path class="pcb-flow" style="animation-delay: -2s;" d="M 10 90 L 10 60 L 20 50 L 40 50" />
+                    <path class="pcb-flow" style="animation-delay: -3s;" d="M 90 10 L 90 40 L 80 50 L 60 50" />
+                    <circle class="pcb-node" cx="50" cy="50" r="1" />
+                    <circle class="pcb-node" cx="10" cy="10" r="1" style="animation-delay: -0.5s;" />
+                    <circle class="pcb-node" cx="90" cy="90" r="1" style="animation-delay: -1s;" />
+                    <circle class="pcb-node" cx="10" cy="90" r="1" style="animation-delay: -1.5s;" />
+                    <circle class="pcb-node" cx="90" cy="10" r="1" style="animation-delay: -2s;" />
+                </svg>
+            </div>
+            <h1 id="hero-headline"></h1>
+            <p>The official training ground for the AlgoGym Community. Create private leaderboards, track progress, and dominate the world of competitive programming together.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary" id="enter-handle-btn" data-text="Create Your AlgoGym Hub">Create Your AlgoGym Hub</button>
+                <a href="#community" class="btn btn-secondary" id="view-leaderboard-btn" data-text="Learn More">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section features fade-in-section" id="features">
+        <div class="container">
+            <h2 class="section-title">// Core Features</h2>
+            <div class="features-grid">
+                 <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-users"></i></div>
+                    <h3>Private Hubs</h3>
+                    <p>Create invite-only leaderboards for your community. Track progress in a focused, competitive environment.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                    <h3>Performance Analytics</h3>
+                    <p>Visualize rating history, submission stats, and solve-patterns with a personalized dashboard.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-fist-raised"></i></div>
+                    <h3>Community Driven</h3>
+                    <p>Foster friendly rivalries. Compare stats, race to solve problems, and grow together as a team.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="section community-section fade-in-section" id="community">
+        <div class="container">
+            <h2 class="section-title">// Built For Your Community</h2>
+            <div class="community-content">
+                <div class="community-text">
+                    <h3>University Coding Clubs</h3>
+                    <p>Foster a culture of competitive programming on campus. Run internal contests, track member progress, and identify top performers for ICPC and other competitions.</p>
+                    <h3>Company Tech Teams</h3>
+                    <p>Level up your engineering team's problem-solving skills. Use CodeArena for internal training, hiring assessments, or just friendly competition.</p>
+                     <h3>Groups of Friends</h3>
+                    <p>Challenge your friends, stay motivated, and learn together. Settle the debate of who the best coder is, once and for all.</p>
+                </div>
+                <div class="community-graphic">
+                     <i class="fas fa-sitemap"></i>
+                     <p>// Your Community Hub</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section regimen fade-in-section" id="regimen">
+        <div class="container">
+            <h2 class="section-title">// Your Training Regimen</h2>
+            <div class="features-grid">
+                <div class="training-card-container">
+                    <div class="training-card">
+                        <div class="training-card-front">
+                            <div class="feature-icon"><i class="fas fa-project-diagram"></i></div>
+                            <h3>Graph Theory</h3>
+                        </div>
+                        <div class="training-card-back">
+                            <h3>Master The Connections</h3>
+                            <p>From Dijkstra to Max-Flow, sharpen your skills on traversal, shortest path, and network flow problems.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="training-card-container">
+                    <div class="training-card">
+                        <div class="training-card-front">
+                            <div class="feature-icon"><i class="fas fa-layer-group"></i></div>
+                            <h3>Dynamic Programming</h3>
+                        </div>
+                        <div class="training-card-back">
+                            <h3>Optimize Subproblems</h3>
+                            <p>Tackle complex problems by breaking them down. Master memoization and tabulation techniques.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="training-card-container">
+                    <div class="training-card">
+                        <div class="training-card-front">
+                            <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
+                            <h3>Data Structures</h3>
+                        </div>
+                        <div class="training-card-back">
+                            <h3>Build Efficiently</h3>
+                            <p>From Segment Trees to Fenwick Trees, implement and utilize advanced data structures for faster solutions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section leaderboard-preview fade-in-section" id="spar">
+        <div class="container">
+            <h2 class="section-title">// Rank Up In Your Hub</h2>
+            <div class="podium">
+                <div class="podium-item rank-2">
+                    <div class="podium-rank podium-rank-2">#2</div>
+                    <img src="https://i.pravatar.cc/150?u=user_two" alt="Avatar" class="podium-avatar">
+                    <div class="podium-handle">user_two</div>
+                    <div class="podium-rating">3105</div>
+                </div>
+                <div class="podium-item rank-1">
+                    <div class="podium-rank podium-rank-1">#1</div>
+                    <img src="https://i.pravatar.cc/150?u=user_one" alt="Avatar" class="podium-avatar">
+                    <div class="podium-handle">user_one</div>
+                    <div class="podium-rating">3450</div>
+                </div>
+                <div class="podium-item rank-3">
+                    <div class="podium-rank podium-rank-3">#3</div>
+                    <img src="https://i.pravatar.cc/150?u=user_three" alt="Avatar" class="podium-avatar">
+                    <div class="podium-handle">user_three</div>
+                    <div class="podium-rating">2980</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section testimonials fade-in-section" id="testimonials">
+        <div class="container">
+            <h2 class="section-title">// Member Feedback</h2>
+            <div class="features-grid">
+                <div class="testimonial-card">
+                    <p>"CodeArena has been invaluable for our university's coding club. The private leaderboard is perfect for our weekly contests."</p>
+                    <div class="testimonial-author">@club_president <span>- University Team Lead</span></div>
+                </div>
+                <div class="testimonial-card">
+                    <p>"Our engineering team uses this to stay sharp. It's a fun way to encourage continuous learning and friendly competition."</p>
+                    <div class="testimonial-author">@tech_lead <span>- Senior Software Engineer</span></div>
+                </div>
+                 <div class="testimonial-card">
+                    <p>"Finally, an easy way to track progress against my friends without the noise of global leaderboards. 10/10."</p>
+                    <div class="testimonial-author">@friendly_rival <span>- Candidate Master</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section cta fade-in-section" id="cta">
+        <div class="container">
+            <h2 class="section-title">// Ready to Build Your Arena?</h2>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem;">Create your community hub and start your journey towards competitive programming mastery, together.</p>
+            <button class="btn btn-primary" id="cta-handle-btn" data-text="[ Create Your AlgoGym Hub &gt;_ ]">[ Create Your AlgoGym Hub &gt;_ ]</button>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <a href="#" class="logo">Code<span>Arena</span></a>
+                    <p>The official training hub for the AlgoGym Community.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h3>Navigate</h3>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#community">Community Hubs</a></li>
+                        <li><a href="#regimen">Training</a></li>
+                        <li><a href="#spar">Leaderboards</a></li>
+                    </ul>
+                </div>
+                 <div class="footer-links">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">API Docs</a></li>
+                        <li><a href="#">Open Source</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2025 CodeArena for AlgoGym. An open-source project. Not affiliated with Codeforces.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal" id="handle-modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2>root@codearena:~# handle_verification</h2>
+            </div>
+            <div class="terminal-line"><span class="terminal-prompt">user@codearena:~$</span> Enter your Codeforces handle to continue</div>
+            <form id="handle-form">
+                <div class="form-group">
+                    <div style="display: flex; align-items: center;">
+                        <span class="terminal-prompt">handle&gt;</span>
+                        <input type="text" id="handle-input" class="terminal-input" placeholder="tourist" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-text="Verify &gt;">Verify &gt;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="verification-modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div class="modal-header">
+                <h2>root@codearena:~# verification_initiated</h2>
+            </div>
+            <div class="terminal-line"><span class="terminal-prompt">user@codearena:~$</span> Verifying handle: <span id="verify-handle-name"></span></div>
+            <div id="verification-content">
+                <div class="countdown" id="countdown">Time remaining: <span id="time-left">5:00</span></div>
+                <div class="verification-instructions">
+                    <div class="terminal-line">To confirm ownership, please:</div>
+                    <ol>
+                        <li>Go to any Codeforces problem</li>
+                        <li>Submit a solution that gives a <strong>Compilation Error</strong></li>
+                        <li>This must be done within 5 minutes</li>
+                    </ol>
+                </div>
+                <div id="verification-status">
+                    <div class="spinner"></div>
+                    <p>Scanning recent submissions...</p>
+                </div>
+                <div id="verification-result" style="display: none;">
+                    <div class="terminal-line" id="result-text"></div>
+                    <button class="btn btn-primary" id="continue-btn" data-text="Continue &gt;" style="margin-top: 1rem;">Continue &gt;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Nerdy Add-on: Boot Sequence Script ---
+            const bootSequence = document.getElementById('boot-sequence');
+            if (bootSequence && !sessionStorage.getItem('bootShown')) {
+                const bootTextElement = document.getElementById('boot-text');
+                const lines = [
+                    'INITIATING KERNEL v3.14...',
+                    'MOUNTING FILESYSTEMS... [OK]',
+                    'CHECKING MEMORY... 16384M OK',
+                    'LOADING DRIVERS... [OK]',
+                    '  > NET DRIVER v2.5... LOADED',
+                    '  > GPU DRIVER v4.1... LOADED',
+                    'STARTING UI DAEMON: CodeArena.exe',
+                    'CONNECTING TO ALGOGYM NETWORK...',
+                    'CONNECTION ESTABLISHED. AUTH TOKEN: 4B2A-9F7C-3E1D-8G5H',
+                    'RENDERING INTERFACE... SUCCESS',
+                    'WELCOME, USER.'
+                ];
+                let lineIndex = 0;
+                let charIndex = 0;
+                const typeLine = () => {
+                    if (lineIndex >= lines.length) {
+                        setTimeout(() => {
+                            bootSequence.style.opacity = '0';
+                            bootSequence.style.visibility = 'hidden';
+                            sessionStorage.setItem('bootShown', 'true');
+                            document.body.style.overflow = 'auto'; // Restore scroll
+                        }, 500);
+                        return;
+                    }
+                    if (charIndex < lines[lineIndex].length) {
+                        bootTextElement.innerHTML += lines[lineIndex][charIndex];
+                        charIndex++;
+                        setTimeout(typeLine, Math.random() * 50 + 10);
+                    } else {
+                        bootTextElement.innerHTML += '<br>';
+                        lineIndex++;
+                        charIndex = 0;
+                        setTimeout(typeLine, Math.random() * 200 + 50);
+                    }
+                };
+                document.body.style.overflow = 'hidden'; // Prevent scroll during boot
+                typeLine();
+            } else if (bootSequence) {
+                bootSequence.style.display = 'none';
+            }
+            // --- End of Boot Sequence Script ---
+
+            // --- Binary Clock ---
+            function updateBinaryClock() {
+                const now = new Date();
+                const hours = now.getHours().toString(2).padStart(6, '0');
+                const minutes = now.getMinutes().toString(2).padStart(6, '0');
+                const seconds = now.getSeconds().toString(2).padStart(6, '0');
+                
+                document.getElementById('binary-clock').textContent = 
+                    `${hours}:${minutes}:${seconds}`;
+            }
+            setInterval(updateBinaryClock, 1000);
+            updateBinaryClock();
+
+            // --- Matrix-style background ---
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Matrix characters - mix of 0s, 1s, and some special chars
+            const chars = '01$%&/()=*+-#@<>';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            
+            // Set drops to an array of column heights
+            const drops = Array.from({ length: columns }).fill(1);
+
+            function draw() {
+                // Semi-transparent black to create trail effect
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-green');
+                ctx.font = `${fontSize}px monospace`;
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    // Reset drop if it reaches bottom with some randomness
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    
+                    drops[i]++;
+                }
+            }
+            
+            setInterval(draw, 33);
+            
+            window.addEventListener('resize', () => {
+                 canvas.width = window.innerWidth;
+                 canvas.height = window.innerHeight;
+                 const newColumns = canvas.width / fontSize;
+                 drops.length = 0; 
+                 for(let i = 0; i < newColumns; i++) drops.push(1);
+            });
+
+            // --- Intersection Observer for fade-in animations ---
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('is-visible');
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.fade-in-section').forEach(section => observer.observe(section));
+            
+            // --- Nerdy Add-on: Text Scramble Effect ---
+            const scrambleText = (element) => {
+                const chars = '!<>-_\\/[]{}—=+*^?#________';
+                const originalText = element.getAttribute('data-original-text');
+                if (element.isScrambling) return;
+                element.isScrambling = true;
+
+                let frame = 0;
+                const framesPerLetter = 4;
+                const totalFrames = originalText.length * framesPerLetter;
+
+                const interval = setInterval(() => {
+                    let newText = '';
+                    for (let i = 0; i < originalText.length; i++) {
+                        const progress = Math.floor(frame / framesPerLetter);
+                        if (i <= progress) {
+                            newText += originalText[i];
+                        } else {
+                            newText += chars[Math.floor(Math.random() * chars.length)];
+                        }
+                    }
+                    element.textContent = newText;
+                    frame++;
+                    if (frame >= totalFrames) {
+                        element.textContent = originalText;
+                        clearInterval(interval);
+                        element.isScrambling = false;
+                    }
+                }, 20);
+            };
+
+            document.querySelectorAll('.section-title').forEach(title => {
+                title.setAttribute('data-original-text', title.textContent);
+                title.addEventListener('mouseover', () => scrambleText(title));
+            });
+
+            // --- Modal and Authentication Logic ---
+            const enterHandleBtn = document.getElementById('enter-handle-btn');
+            const dashboardLink = document.getElementById('dashboard-link');
+            const handleModal = document.getElementById('handle-modal');
+            const verificationModal = document.getElementById('verification-modal');
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            const handleForm = document.getElementById('handle-form');
+            const handleInput = document.getElementById('handle-input');
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const mobileNav = document.querySelector('.mobile-nav');
+            const countdownElement = document.getElementById('countdown');
+            const timeLeftElement = document.getElementById('time-left');
+            const verificationStatus = document.getElementById('verification-status');
+            const verificationResult = document.getElementById('verification-result');
+            const resultText = document.getElementById('result-text');
+            const continueBtn = document.getElementById('continue-btn');
+            const verifyHandleName = document.getElementById('verify-handle-name');
+
+            let countdownInterval, verificationEndTime, currentHandle = '';
+            const SERVER_URL = 'http://localhost:3000'; // This will need to be changed for a deployed app
+
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileNav.classList.toggle('active');
+                mobileMenuBtn.setAttribute('aria-expanded', mobileNav.classList.contains('active'));
+            });
+
+            document.querySelectorAll('.mobile-nav a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileNav.classList.remove('active');
+                    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                });
+            });
+
+            const checkAuthentication = () => {
+                const savedHandle = localStorage.getItem('cf_handle');
+                const isVerified = localStorage.getItem('cf_verified') === 'true';
+                if (savedHandle && isVerified) {
+                    dashboardLink.textContent = `${savedHandle}'s Hub`;
+                    dashboardLink.setAttribute('data-text', `${savedHandle}'s Hub`);
+                    dashboardLink.onclick = () => window.location.href = `dashboard.html?handle=${savedHandle}`;
+                    enterHandleBtn.textContent = `Go to Your Hub`;
+                    enterHandleBtn.setAttribute('data-text', `Go to Your Hub`);
+                    return true;
+                } else {
+                    dashboardLink.textContent = 'Login';
+                    dashboardLink.setAttribute('data-text', 'Login');
+                    dashboardLink.onclick = (e) => {
+                        e.preventDefault();
+                        openModal(handleModal);
+                    };
+                    return false;
+                }
+            };
+
+            const requireAuth = (e) => { 
+                e.preventDefault();
+                if (!checkAuthentication()) { 
+                    openModal(handleModal); 
+                } else {
+                    window.location.href = `dashboard.html?handle=${localStorage.getItem('cf_handle')}`;
+                }
+            };
+            
+            dashboardLink.addEventListener('click', requireAuth);
+            
+            document.querySelectorAll('a[href="#spar"]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (!checkAuthentication()) {
+                        e.preventDefault();
+                        openModal(handleModal);
+                    }
+                });
+            });
+
+            const openModal = (modal) => {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            };
+            const closeModal = (modal) => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                clearInterval(countdownInterval);
+            };
+            
+            enterHandleBtn.addEventListener('click', () => {
+                if (checkAuthentication()) {
+                    window.location.href = `dashboard.html?handle=${localStorage.getItem('cf_handle')}`;
+                } else {
+                    openModal(handleModal);
+                }
+            });
+
+            closeModalButtons.forEach(btn => btn.addEventListener('click', () => {
+                closeModal(handleModal); 
+                closeModal(verificationModal);
+            }));
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === handleModal) closeModal(handleModal);
+                if (e.target === verificationModal) closeModal(verificationModal);
+            });
+
+            handleForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const handle = handleInput.value.trim(); 
+                if (!handle) return;
+                
+                currentHandle = handle;
+                // In a real app, you would check against Codeforces API
+                // For demo, we'll simulate the check
+                simulateHandleCheck(handle);
+            });
+
+            function simulateHandleCheck(handle) {
+                // Simulate API call delay
+                setTimeout(() => {
+                    // For demo purposes, let's assume the handle exists
+                    startVerificationProcess(handle);
+                }, 1000);
+            }
+
+            const startVerificationProcess = (handle) => {
+                closeModal(handleModal); 
+                openModal(verificationModal);
+                verifyHandleName.textContent = handle;
+                
+                // Set verification end time (5 minutes from now)
+                verificationEndTime = Date.now() + 5 * 60 * 1000;
+                
+                // Start countdown
+                updateCountdown();
+                countdownInterval = setInterval(updateCountdown, 1000);
+                
+                // Simulate verification process
+                setTimeout(() => {
+                    // Simulate successful verification after 3 seconds
+                    clearInterval(countdownInterval);
+                    verificationStatus.style.display = 'none';
+                    verificationResult.style.display = 'block';
+                    resultText.innerHTML = '<span style="color: var(--accent-green)">Verification successful!</span> Handle confirmed: ' + handle;
+                    
+                    // Store in localStorage for demo purposes
+                    localStorage.setItem('cf_handle', handle);
+                    localStorage.setItem('cf_verified', 'true');
+                    
+                    continueBtn.addEventListener('click', () => {
+                        closeModal(verificationModal);
+                        checkAuthentication();
+                    });
+                }, 3000);
+            };
+            
+            function updateCountdown() {
+                const now = Date.now();
+                const timeLeft = verificationEndTime - now;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    timeLeftElement.textContent = '0:00';
+                    verificationStatus.innerHTML = '<p style="color: #ff5555">Verification timeout. Please try again.</p>';
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000);
+                timeLeftElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            // --- Typewriter Effect for Hero Headline ---
+            const headline = document.getElementById('hero-headline');
+            const words = ["Analyze.", "Compete.", "Conquer."];
+            let wordIndex = 0, charIndex = 0, isDeleting = false, typingDelay = 120, deletingDelay = 80, pauseDelay = 1200;
+            
+            function type() {
+                const currentWord = words[wordIndex];
+                let displayText = isDeleting ? 
+                    currentWord.substring(0, charIndex - 1) : 
+                    currentWord.substring(0, charIndex + 1);
+                
+                headline.innerHTML = `${displayText}<span class="typewriter-cursor">|</span>`;
+                
+                if (!isDeleting && displayText === currentWord) {
+                    setTimeout(() => { isDeleting = true; type(); }, pauseDelay);
+                    return;
+                } else if (isDeleting && displayText === '') {
+                    isDeleting = false;
+                    wordIndex = (wordIndex + 1) % words.length;
+                    setTimeout(type, typingDelay);
+                    return;
+                }
+                setTimeout(type, isDeleting ? deletingDelay : typingDelay);
+                charIndex = isDeleting ? charIndex - 1 : charIndex + 1;
+            }
+            
+            const ctaBtn = document.getElementById('cta-handle-btn');
+            if (ctaBtn) ctaBtn.addEventListener('click', () => enterHandleBtn.click());
+
+            checkAuthentication(); 
+            type();
+        });
+    </script>
+</body>
+</html>

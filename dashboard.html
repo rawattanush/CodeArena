@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeArena - Programmer Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* CSS styles from home3.html, adapted for dashboard.html content */
+        :root {
+            --dark-bg: #0a0a0a;
+            --primary-bg: #101010;
+            --secondary-bg: #1a1a1a;
+            --border-color: #2a2a2a;
+            --accent-green: #00ff9c;
+            --accent-blue: #00a2ff;
+            --accent-yellow: #ffc83c;
+            --accent-purple: #d96dff;
+            --accent-cyan: #55ddec;
+            --accent-red: #ff3c3c;
+            --accent-glow: rgba(0, 255, 156, 0.2);
+            --text-primary: #e0e0e0;
+            --text-secondary: #888888;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --shadow: 0 0 20px rgba(0, 255, 156, 0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            /* Re-themed platform colors to fit the new aesthetic */
+            --cf-color: var(--accent-red);
+            --lc-color: var(--accent-yellow);
+            --cc-color: #a07d4a; 
+            --ac-color: var(--accent-purple);
+            --ag-color: var(--accent-cyan);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanline & Flicker Overlay from home3.html */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0px, rgba(0, 0, 0, 0.3) 1px, transparent 1px, transparent 3px);
+            opacity: 0.5;
+            z-index: 1;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0%   { opacity: 0.4; } 20%  { opacity: 0.6; } 40%  { opacity: 0.4; }
+            60%  { opacity: 0.7; } 80%  { opacity: 0.4; } 100% { opacity: 0.6; }
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        h1, h2, h3 { font-family: var(--font-mono); color: var(--text-primary); font-weight: 700; }
+        a { text-decoration: none; color: var(--accent-green); transition: var(--transition); }
+        a:hover { filter: brightness(1.2); }
+
+        .background-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; opacity: 0.2;
+        }
+        
+        /* Header styling adapted for dashboard header */
+        header {
+            background-color: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo { font-family: var(--font-mono); font-size: 1.5rem; color: var(--text-primary); position: relative; display:flex; align-items:center; gap:10px;}
+        .logo span { color: var(--accent-green); }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .nav-links { display: flex; align-items: center; gap: 20px; }
+        .nav-links a { color: var(--text-secondary); font-weight: 500; font-family: var(--font-mono); font-size: 0.9rem; transition: var(--transition); }
+        .nav-links a:hover { color: var(--text-primary); text-shadow: 0 0 5px var(--accent-glow); }
+        .notification-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); transition: var(--transition);}
+        .notification-btn:hover { color: var(--text-primary); }
+        .notification-btn { position: relative; }
+        .badge {
+            position: absolute; top: -5px; right: -5px; background-color: var(--accent-green); color: var(--dark-bg);
+            border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex;
+            align-items: center; justify-content: center; font-weight: 700; font-family: var(--font-mono);
+        }
+        .avatar {
+            width: 40px; height: 40px; border-radius: 4px; border: 1px solid var(--border-color);
+            background-color: var(--secondary-bg); color: var(--text-primary); display: flex;
+            align-items: center; justify-content: center; font-weight: 600; font-family: var(--font-mono); cursor: pointer;
+        }
+        .binary-clock {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dashboard Layout & Section Titles */
+        .dashboard { padding: 40px 0; }
+        .section-title {
+            margin: 40px 0 20px;
+            font-size: clamp(1.8rem, 4vw, 2.2rem);
+            font-weight: 700;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .section-title i { color: var(--accent-green); }
+        .centered-title {
+            justify-content: center;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            margin-top: 60px;
+            margin-bottom: 0;
+        }
+
+        /* Card Styles from home3.html */
+        .card {
+            background-color: var(--primary-bg); border-radius: 8px; padding: 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color); transition: var(--transition);
+            display: flex; flex-direction: column; height: 100%;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent-green); box-shadow: var(--shadow); }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);
+            font-family: var(--font-mono); font-size: 0.9rem;
+        }
+        .card-title { font-size: 1.2rem; }
+        .card-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+        /* Stat Card & Tooltip Styles */
+        .stat-card {
+            background-color: var(--secondary-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px; text-align: center; position: relative;
+        }
+        .stat-icon { font-size: 2rem; margin-bottom: 15px; color: var(--accent-green); }
+        .stat-value { font-size: 2.2rem; font-weight: 700; font-family: var(--font-mono); }
+        .stat-label { color: var(--text-secondary); font-size: 0.9rem; }
+        .tooltip {
+            visibility: hidden; width: 240px; background-color: var(--primary-bg);
+            color: var(--text-primary); text-align: left; border-radius: 6px;
+            padding: 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%;
+            transform: translateX(-50%); opacity: 0; transition: opacity 0.3s;
+            font-size: 0.85rem; border: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+        }
+        .stat-card:hover .tooltip { visibility: visible; opacity: 1; }
+
+        /* Progress Ring Styles */
+        .progress-ring { position: relative; width: 80px; height: 80px; margin: 10px auto; }
+        .ring-bg { fill: none; stroke: var(--border-color); stroke-width: 5; }
+        .ring-progress { fill: none; stroke-width: 5; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.5s ease; }
+        .progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; font-weight: 600; font-family: var(--font-mono); }
+        
+        /* Platform Tabs & Content Styles */
+        .platform-tabs { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+        }
+        .platform-tab { 
+            padding: 8px 18px; 
+            border-radius: 4px; 
+            background-color: var(--secondary-bg); 
+            border: 1px solid var(--border-color); 
+            cursor: pointer; 
+            font-weight: 500; 
+            font-family: var(--font-mono); 
+            white-space: nowrap; 
+            transition: var(--transition); 
+        }
+        .platform-tab:hover { background-color: var(--border-color); }
+        .platform-tab.active { background-color: var(--accent-green); color: var(--dark-bg); border-color: var(--accent-green); }
+        .platform-content { display: none; }
+        .platform-content.active { display: block; }
+        
+        /* Glitching Button Styles for all buttons */
+        .connect-btn, .solve-btn, .review-btn {
+            padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer;
+            text-decoration: none; display: inline-block; border: 1px solid var(--accent-green);
+            font-size: 1rem; position: relative; overflow: hidden; background: transparent;
+            color: var(--accent-green); font-family: var(--font-mono); transition: none;
+        }
+        .connect-btn:hover, .solve-btn:hover, .review-btn:hover { color: var(--accent-green); background-color: var(--accent-glow); }
+        .connect-btn::before, .solve-btn::before, .review-btn::before,
+        .connect-btn::after, .solve-btn::after, .review-btn::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: var(--dark-bg);
+            overflow: hidden; clip-path: inset(0);
+        }
+        .connect-btn::before, .solve-btn::before, .review-btn::before { left: 2px; text-shadow: -1px 0 var(--accent-green); animation: glitch-anim-1 2s infinite linear alternate-reverse; }
+        .connect-btn::after, .solve-btn::after, .review-btn::after { left: -2px; text-shadow: -1px 0 var(--accent-glow), 1px 0 #ff00c1; animation: glitch-anim-2 2s infinite linear alternate-reverse; }
+
+        @keyframes glitch-anim-1 { 0% { clip-path: inset(30% 0 60% 0); } 20% { clip-path: inset(90% 0 1% 0); } 40% { clip-path: inset(50% 0 45% 0); } 60% { clip-path: inset(10% 0 85% 0); } 80% { clip-path: inset(80% 0 5% 0); } 100% { clip-path: inset(40% 0 40% 0); } }
+        @keyframes glitch-anim-2 { 0% { clip-path: inset(80% 0 5% 0); } 20% { clip-path: inset(40% 0 40% 0); } 40% { clip-path: inset(90% 0 1% 0); } 60% { clip-path: inset(30% 0 60% 0); } 80% { clip-path: inset(10% 0 85% 0); } 100% { clip-path: inset(50% 0 45% 0); } }
+
+        /* Not Connected State */
+        .not-connected { text-align: center; padding: 40px 20px; }
+        .not-connected i { font-size: 3rem; color: var(--text-secondary); margin-bottom: 15px; }
+        .not-connected p { margin-bottom: 20px; color: var(--text-secondary); }
+
+        /* Problems List Styles */
+        .problem-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .problem-item:last-child { border-bottom: none; }
+        .problem-name { font-weight: 500; font-family: var(--font-mono); }
+        .problem-details span:not(:last-child)::after { content: ' // '; margin: 0 8px; color: var(--border-color); }
+        .problem-status { font-size: 0.9rem; font-weight: 500; padding: 4px 10px; border-radius: 4px; font-family: var(--font-mono); }
+        .solved { background-color: rgba(0, 255, 156, 0.1); color: var(--accent-green); }
+        .attempted { background-color: rgba(255, 200, 60, 0.1); color: var(--accent-yellow); }
+
+        /* Weakness Analysis */
+        .weakness-bar { height: 8px; flex-grow: 1; background-color: var(--secondary-bg); border-radius: 4px; overflow: hidden; margin: 0 15px; }
+        .weakness-value { font-weight: 600; min-width: 40px; text-align: right; font-family: var(--font-mono); }
+        
+        /* Achievements */
+        .badge-icon { width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: var(--secondary-bg); border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .badge-icon.unlocked { color: var(--accent-green); border-color: var(--accent-green); }
+
+        /* Footer */
+        footer { background-color: var(--primary-bg); color: var(--text-secondary); padding: 4rem 0 2rem; border-top: 1px solid var(--border-color); }
+        .footer-logo { font-family: var(--font-mono); font-size: 1.5rem; color: var(--text-primary); position: relative; display:flex; align-items:center; gap:10px; margin-bottom: 20px;}
+        .footer-logo span { color: var(--accent-green); }
+        .footer-links { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem;}
+        .footer-links a { color: var(--text-secondary); }
+        .footer-links a:hover { color: var(--text-primary); }
+        .social-icons a { color: var(--text-secondary); font-size: 1.5rem; margin-right: 1rem; }
+        .social-icons a:hover { color: var(--accent-green); }
+        .copyright { text-align: center; font-size: 0.9rem; padding-top: 2rem; border-top: 1px solid var(--border-color); }
+
+        /* Contest Performance */
+        .contest-card { background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
+        .algogym-contest { border-left: 3px solid var(--ag-color); }
+        
+        /* Recommendation Cards */
+        .recommendation-card { background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+
+        /* Rank Indicators */
+        .rank-item { background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 4px; }
+        .rank-value { color: var(--text-primary); }
+
+        /* Grid for main content */
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            align-items: start;
+        }
+        
+        /* --- Mini Game Styles --- */
+        #game-canvas, #hanoi-canvas {
+            background-color: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .game-score, .hanoi-info {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+        }
+        .game-score span, .hanoi-info span {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+        .game-btn, .hanoi-btn {
+            padding: 5px 15px;
+            font-size: 0.9rem;
+        }
+        .hanoi-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+         .hanoi-controls label {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        .hanoi-controls select {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            border-radius: 4px;
+            padding: 5px;
+        }
+        .game-description {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin: 10px 0;
+            flex-grow: 1;
+        }
+        .scoreboard {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        .scoreboard h4 {
+            font-family: var(--font-mono);
+            color: var(--accent-green);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .scoreboard-list {
+            list-style: none;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        .scoreboard-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .scoreboard-list li:last-child {
+            border-bottom: none;
+        }
+        .scoreboard-list .rank { color: var(--text-secondary); }
+        .scoreboard-list .score { color: var(--accent-yellow); }
+
+        .hanoi-button-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        .hanoi-tower-btn {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            flex-basis: 30%;
+        }
+        .hanoi-tower-btn.selected {
+            background-color: var(--accent-yellow);
+            color: var(--dark-bg);
+            border-color: var(--accent-yellow);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary); z-index: 1001;}
+        .mobile-nav {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background-color: var(--primary-bg);
+            padding: 20px;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 999;
+            transform: translateY(-120%);
+            transition: transform 0.3s ease-in-out;
+            visibility: hidden;
+        }
+
+        .mobile-nav.active {
+            display: flex;
+            transform: translateY(0);
+            visibility: visible;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            text-decoration: none;
+        }
+
+        .mobile-nav-item:hover {
+            background-color: var(--secondary-bg);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .games-section, .centered-title[data-original-text="Bored?"] {
+                display: none; /* Hide games and title on smaller screens */
+            }
+             .nav-links {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) { 
+            .mobile-menu-btn { display: block; } 
+            .nav-right { display: none; } 
+            .section-title { font-size: 1.5rem; }
+            .binary-clock { display: none; }
+            .card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+
+        @media (max-width: 576px) {
+            .container { padding: 0 15px; }
+            .card { padding: 20px; }
+            .card-content {
+                grid-template-columns: 1fr;
+            }
+            .contest-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .problem-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas class="background-canvas" id="background-canvas"></canvas>
+
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-code" style="color: var(--accent-green);"></i>
+                    Code<span>Arena</span>
+                </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="nav-right" id="navRight">
+                    <div class="nav-links">
+                        <a href="#">Practice</a>
+                        <a href="#">Compare</a>
+                        <a href="#">Leaderboard</a>
+                    </div>
+                    <div class="binary-clock" id="binary-clock"></div>
+                    <button class="notification-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <a href="profile.html" class="avatar" id="userAvatar">SB</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="mobile-nav" id="mobileNav">
+         <a href="#" class="mobile-nav-item">
+            <i class="fas fa-pencil-ruler"></i>
+            <span>Practice</span>
+        </a>
+         <a href="#" class="mobile-nav-item">
+            <i class="fas fa-users"></i>
+            <span>Compare</span>
+        </a>
+         <a href="#" class="mobile-nav-item">
+            <i class="fas fa-trophy"></i>
+            <span>Leaderboard</span>
+        </a>
+        <a href="#" class="mobile-nav-item">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+            <span class="badge" style="position: static; margin-left: auto;">3</span>
+        </a>
+        <a href="#" class="mobile-nav-item">
+            <div class="avatar" style="position: static; width: 30px; height: 30px;">SB</div>
+            <span>snowybacon</span>
+        </a>
+    </div>
+
+    <main class="dashboard container">
+        <section class="overview">
+            <h2 class="section-title" data-original-text="Overview"><i class="fas fa-chart-line"></i>// Overview</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Welcome back, snowybacon!</h3>
+                    <span>Last updated: Today, 10:45 AM</span>
+                </div>
+                <div class="card-content">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--accent-blue);"> <i class="fas fa-code"></i> </div>
+                        <div class="stat-value">1,247</div>
+                        <div class="stat-label">Total Problems Solved</div>
+                        <div class="tooltip">
+                            <strong>[ Platforms ]</strong><br>
+                            &gt; Codeforces: 547<br>
+                            &gt; LeetCode: 412<br>
+                            &gt; CodeChef: 218<br>
+                            &gt; AtCoder: 70
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--accent-green);"> <i class="fas fa-chart-line"></i> </div>
+                        <div class="stat-value">1,865</div>
+                        <div class="stat-label">Combined Rating</div>
+                        <div class="tooltip">
+                            <strong>[ Calculation ]</strong><br>
+                            &gt; Weighted Avg<br><br>
+                            <strong>[ Ratings ]</strong><br>
+                            &gt; CF: 1645 (30%)<br>
+                            &gt; LC: 2145 (40%)<br>
+                            &gt; CC: 1875 (20%)<br>
+                            &gt; AC: 1245 (10%)
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="progress-ring">
+                            <svg viewBox="0 0 36 36" width="80" height="80">
+                                <circle class="ring-bg" r="16" cx="18" cy="18" />
+                                <circle class="ring-progress" r="16" cx="18" cy="18" stroke="var(--accent-green)" stroke-dasharray="100 100" stroke-dashoffset="25" />
+                            </svg>
+                            <div class="progress-text">75%</div>
+                        </div>
+                        <div class="stat-label">Daily Goal</div>
+                        <div class="daily-goal-text" style="color: var(--text-secondary)">3/4 problems solved</div>
+                        <div class="tooltip">
+                            <strong>[ Daily Progress ]</strong><br>
+                            [✓] CF: 1557C<br>
+                            [✓] LC: 215<br>
+                            [✓] CC: XOR Equal<br>
+                            [✗] AC: D - increment
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--accent-red);"><i class="fas fa-fire"></i></div>
+                        <div class="stat-value">42</div>
+                        <div class="stat-label">Active Streak (Days)</div>
+                        <div class="tooltip">
+                           <strong>[ Streaks ]</strong><br>
+                            &gt; CF: 42 days<br>
+                            &gt; LC: 38 days<br>
+                            &gt; CC: 12 days<br>
+                            &gt; AC: 5 days<br><br>
+                            <strong>[ Record ]: 72 days</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="contest-performance-section">
+            <h2 class="section-title" data-original-text="Last Contest Performance"><i class="fas fa-trophy"></i>// Last Contest Performance</h2>
+            <div class="card">
+                <div class="card-header"> <h3 class="card-title">Last Contest Results</h3> </div>
+                <div class="contest-performance" style="display:flex; flex-direction:column; gap:15px;">
+                    <div class="contest-card">
+                        <div class="contest-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap;">
+                            <div class="contest-name" style="font-weight:600; font-family:var(--font-mono);">Codeforces Round #815 (Div. 2)</div>
+                            <div class="contest-date" style="font-size:0.85rem; color: var(--text-secondary);">2 days ago</div>
+                        </div>
+                        <div class="contest-stats" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:10px; margin-bottom:10px; text-align:center;">
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem;">#1,235</div><div class="contest-stat-label">Rank</div></div>
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem;">3/7</div><div class="contest-stat-label">Solved</div></div>
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem; color:var(--accent-green)">+72</div><div class="contest-stat-label">Rating Δ</div></div>
+                        </div>
+                        <div class="contest-mistakes" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color);">
+                            <div class="mistake-item" style="display:flex; align-items:center; gap:8px; margin-bottom:5px; font-size:0.9rem;"><i class="fas fa-times-circle" style="color:var(--accent-red)"></i><span>Problem C: Time limit exceeded on test 5</span></div>
+                            <div class="mistake-item" style="display:flex; align-items:center; gap:8px; margin-bottom:5px; font-size:0.9rem;"><i class="fas fa-times-circle" style="color:var(--accent-red)"></i><span>Problem D: Wrong answer on test 12</span></div>
+                            <button class="review-btn" data-text="Review" style="margin-top:15px;">Review</button>
+                        </div>
+                    </div>
+                    <div class="contest-card algogym-contest">
+                        <div class="contest-platform" style="display:flex; align-items:center; gap:8px; font-size:0.9rem; color:var(--text-secondary); margin-bottom:5px;"><i class="fas fa-users"></i><span>AlgoGym Virtual Contest</span></div>
+                        <div class="contest-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap: wrap;">
+                            <div class="contest-name" style="font-weight:600; font-family:var(--font-mono);">Weekly Practice Contest #42</div>
+                            <div class="contest-date" style="font-size:0.85rem; color: var(--text-secondary);">Yesterday</div>
+                        </div>
+                        <div class="contest-stats" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:10px; margin-bottom:10px; text-align:center;">
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem;">#3</div><div class="contest-stat-label">Rank</div></div>
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem;">5/6</div><div class="contest-stat-label">Solved</div></div>
+                            <div><div class="contest-stat-value" style="font-family:var(--font-mono); font-size: 1.5rem;">98%</div><div class="contest-stat-label">Accuracy</div></div>
+                        </div>
+                        <button class="review-btn" data-text="Analysis" style="margin-top:15px;">Analysis</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="platform-tabs" id="platformTabs">
+            <div class="platform-tab active" data-platform="cf">Codeforces</div>
+            <div class="platform-tab" data-platform="lc">LeetCode</div>
+            <div class="platform-tab" data-platform="cc">CodeChef</div>
+            <div class="platform-tab" data-platform="ac">AtCoder</div>
+            <div class="platform-tab" data-platform="ag">AlgoGym</div>
+        </div>
+        
+        <div id="all-platform-content">
+            <div class="platform-content active" id="cf-content">
+                <div class="card platform-card cf"><div class="platform-header" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;"><div class="platform-logo" style="width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dark-bg); font-weight:600; background-color:var(--cf-color);">CF</div><h3 class="card-title">Codeforces</h3></div><div class="platform-info" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;"><div class="connection-status" style="display:flex; align-items:center; gap:5px; font-size:0.85rem;"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i><span>Connected - Last synced: Today, 09:30 AM</span></div><div class="rank-container" style="display:flex; gap:15px; margin:15px 0; justify-content:center; flex-wrap:wrap;"><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Current Rating</div><div class="rank-value">1,645</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Max Rating</div><div class="rank-value">1,785</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Rank</div><div class="rank-value">Specialist</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Problems Solved</div><div class="rank-value">547</div></div></div></div><div class="platform-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:15px; margin-bottom:20px; text-align:center;"><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">87%</div><div class="platform-stat-label">Contest Participation</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">73%</div><div class="platform-stat-label">Accuracy</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">1.2/day</div><div class="platform-stat-label">Avg. Problems</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">42</div><div class="platform-stat-label">Active Streak</div></div></div><div class="chart-container" style="height:200px"><canvas id="cfChart"></canvas></div></div>
+            </div>
+            <div class="platform-content" id="lc-content">
+                <div class="card platform-card lc"><div class="platform-header" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;"><div class="platform-logo" style="width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dark-bg); font-weight:600; background-color:var(--lc-color);">LC</div><h3 class="card-title">LeetCode</h3></div><div class="platform-info" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;"><div class="connection-status" style="display:flex; align-items:center; gap:5px; font-size:0.85rem;"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i><span>Connected - Last synced: Today, 10:15 AM</span></div><div class="rank-container" style="display:flex; gap:15px; margin:15px 0; justify-content:center; flex-wrap:wrap;"><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Contest Rating</div><div class="rank-value">2,145</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Global Rank</div><div class="rank-value">Top 5%</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Problems Solved</div><div class="rank-value">412</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Acceptance Rate</div><div class="rank-value">89%</div></div></div></div><div class="platform-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:15px; margin-bottom:20px; text-align:center;"><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">38</div><div class="platform-stat-label">Contests</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">92%</div><div class="platform-stat-label">Easy Solved</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">78%</div><div class="platform-stat-label">Medium Solved</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">45%</div><div class="platform-stat-label">Hard Solved</div></div></div><div class="chart-container" style="height:200px"><canvas id="lcChart"></canvas></div></div>
+            </div>
+            <div class="platform-content" id="cc-content">
+                <div class="card platform-card cc"><div class="platform-header" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;"><div class="platform-logo" style="width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dark-bg); font-weight:600; background-color:var(--cc-color);">CC</div><h3 class="card-title">CodeChef</h3></div><div class="platform-info" style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;"><div class="connection-status" style="display:flex; align-items:center; gap:5px; font-size:0.85rem;"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i><span>Connected - Last synced: Today, 11:00 AM</span></div><div class="rank-container" style="display:flex; gap:15px; margin:15px 0; justify-content:center; flex-wrap:wrap;"><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Current Rating</div><div class="rank-value">1875</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Max Rating</div><div class="rank-value">1920</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Rank</div><div class="rank-value">4 Star</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Problems Solved</div><div class="rank-value">218</div></div></div></div><div class="platform-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:15px; margin-bottom:20px; text-align:center;"><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">52</div><div class="platform-stat-label">Contests</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">68%</div><div class="platform-stat-label">Accuracy</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">0.8/day</div><div class="platform-stat-label">Avg. Problems</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">12</div><div class="platform-stat-label">Active Streak</div></div></div><div class="chart-container" style="height:200px"><canvas id="ccChart"></canvas></div></div>
+            </div>
+            <div class="platform-content" id="ac-content">
+                <div class="card platform-card ac"><div class="platform-header" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;"><div class="platform-logo" style="width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dark-bg); font-weight:600; background-color:var(--ac-color);">AC</div><h3 class="card-title">AtCoder</h3></div><div class="platform-info"><div class="connection-status" style="display:flex; align-items:center; gap:5px; font-size:0.85rem;"><i class="fas fa-exclamation-circle" style="color:var(--accent-red)"></i><span>Not Connected - Last synced: 5 days ago</span></div><div class="not-connected"><i class="fas fa-plug"></i><p>Connect your AtCoder account to view stats</p><button class="connect-btn" data-text="Connect">Connect</button></div></div></div>
+            </div>
+            <div class="platform-content" id="ag-content">
+                <div class="card platform-card ag"><div class="platform-header" style="display:flex; align-items:center; gap:10px; margin-bottom:15px;"><div class="platform-logo" style="width:30px; height:30px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--dark-bg); font-weight:600; background-color:var(--ag-color);">AG</div><h3 class="card-title">AlgoGym</h3></div><div class="platform-info"><div class="connection-status" style="display:flex; align-items:center; gap:5px; font-size:0.85rem;"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i><span>Connected - Last synced: Today, 08:45 AM</span></div><div class="rank-container" style="display:flex; gap:15px; margin:15px 0; justify-content:center; flex-wrap:wrap;"><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">AlgoGym Score</div><div class="rank-value">8,745</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Community Rank</div><div class="rank-value">#124</div></div><div class="rank-item" style="display:flex; flex-direction:column; align-items:center; padding:10px 15px; min-width:100px;"><div class="rank-label">Contests Given</div><div class="rank-value">24</div></div></div></div><div class="platform-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:15px; margin-bottom:20px; text-align:center;"><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">94%</div><div class="platform-stat-label">Completion</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">87%</div><div class="platform-stat-label">Accuracy</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">2.3/day</div><div class="platform-stat-label">Avg. Problems</div></div><div class="platform-stat"><div class="platform-stat-value" style="font-family:var(--font-mono); font-size:1.5rem">12</div><div class="platform-stat-label">Active Streak</div></div></div><div class="chart-container" style="height:200px"><canvas id="agChart"></canvas></div></div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <section class="recent-problems">
+                <h2 class="section-title" data-original-text="Recent Problems"><i class="fas fa-history"></i>// Recent Problems</h2>
+                <div class="card">
+                    <div class="problems-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 class="problems-title" style="font-size: 1.1rem; font-family:var(--font-body)">Last 7 Days Activity</h3>
+                        <a href="#" class="view-all">View All</a>
+                    </div>
+                    <div class="problems-list">
+                        <div class="problem-item"><div class="problem-info"><div class="problem-name"><span>1557C - Moamen and XOR</span><a href="#" class="problem-link" style="color:var(--text-secondary); margin-left: 8px;"><i class="fas fa-external-link-alt"></i></a></div><div class="problem-details" style="font-size:0.85rem; color:var(--text-secondary)"><span>Codeforces</span><span>Difficulty: 1700</span><span>2 days ago</span></div></div><div class="problem-status solved">Solved</div></div>
+                        <div class="problem-item"><div class="problem-info"><div class="problem-name"><span>215. Kth Largest Element in an Array</span><a href="#" class="problem-link" style="color:var(--text-secondary); margin-left: 8px;"><i class="fas fa-external-link-alt"></i></a></div><div class="problem-details" style="font-size:0.85rem; color:var(--text-secondary)"><span>LeetCode</span><span>Medium</span><span>1 day ago</span></div></div><div class="problem-status solved">Solved</div></div>
+                        <div class="problem-item"><div class="problem-info"><div class="problem-name"><span>XOR Equal</span><a href="#" class="problem-link" style="color:var(--text-secondary); margin-left: 8px;"><i class="fas fa-external-link-alt"></i></a></div><div class="problem-details" style="font-size:0.85rem; color:var(--text-secondary)"><span>CodeChef</span><span>Difficulty: Medium</span><span>Today</span></div></div><div class="problem-status solved">Solved</div></div>
+                        <div class="problem-item"><div class="problem-info"><div class="problem-name"><span>D - increment of coins</span><a href="#" class="problem-link" style="color:var(--text-secondary); margin-left: 8px;"><i class="fas fa-external-link-alt"></i></a></div><div class="problem-details" style="font-size:0.85rem; color:var(--text-secondary)"><span>AtCoder</span><span>Difficulty: 400-800</span><span>Today</span></div></div><div class="problem-status attempted">Attempted</div></div>
+                        <div class="problem-item"><div class="problem-info"><div class="problem-name"><span>Advanced Tree Implementation</span><a href="#" class="problem-link" style="color:var(--text-secondary); margin-left: 8px;"><i class="fas fa-external-link-alt"></i></a></div><div class="problem-details" style="font-size:0.85rem; color:var(--text-secondary)"><span>AlgoGym</span><span>Topic: Trees</span><span>Yesterday</span></div></div><div class="problem-status solved">Solved</div></div>
+                    </div>
+                </div>
+            </section>
+
+             <section class="problem-types">
+                <h2 class="section-title" data-original-text="Problem Types"><i class="fas fa-pie-chart"></i>// Problem Types</h2>
+                <div class="card">
+                     <div class="card-header"><h3 class="card-title">Solved Category Breakdown</h3></div>
+                    <div class="chart-container" style="height: 300px; position: relative;">
+                        <canvas id="problemTypesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="main-grid">
+             <section class="achievements">
+                <h2 class="section-title" data-original-text="Achievements"><i class="fas fa-award"></i>// Achievements</h2>
+                <div class="card">
+                    <div class="badges-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 25px;">
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon unlocked"><i class="fas fa-fire"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">30-Day Streak</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Solved problems for 30 consecutive days</div></div>
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon unlocked"><i class="fas fa-code"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">100 Problems</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Solved 100 problems on Codeforces</div></div>
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon unlocked"><i class="fas fa-trophy"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">Contest Master</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Participated in 20+ contests</div></div>
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon"><i class="fas fa-brain"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">Algorithm Expert</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Master 10+ algorithm categories</div></div>
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon"><i class="fas fa-chess-queen"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">Grandmaster</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Reach 2400+ rating on any platform</div></div>
+                        <div class="badge-item" style="text-align:center;"><div class="badge-icon"><i class="fas fa-globe"></i></div><div class="badge-name" style="font-size:0.9rem; font-weight:500;">Global Top 100</div><div class="badge-desc" style="font-size:0.8rem; color:var(--text-secondary)">Rank in top 100 in a contest</div></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <section class="recommendations">
+            <h2 class="section-title" data-original-text="Recommended Problems"><i class="fas fa-lightbulb"></i>// Recommended Problems</h2>
+            <div class="card"><div class="card-content">
+                <div class="recommendation-card"><h3 class="recommendation-title" style="font-size:1.1rem">Next Challenge: Dynamic Programming</h3><p class="recommendation-desc" style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:15px; flex-grow:1;">Based on your recent activity, we recommend practicing medium to hard DP problems to improve your skills.</p><button class="solve-btn" data-text="Solve Now" style="align-self: flex-start; margin-top: auto;">Solve Now</button></div>
+                <div class="recommendation-card"><h3 class="recommendation-title" style="font-size:1.1rem">Weakness: Graph Theory</h3><p class="recommendation-desc" style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:15px; flex-grow:1;">Your performance in graph problems is below average. Try these curated problems to improve.</p><button class="solve-btn" data-text="Practice" style="align-self: flex-start; margin-top: auto;">Practice</button></div>
+                <div class="recommendation-card"><h3 class="recommendation-title" style="font-size:1.1rem">Contest Preparation</h3><p class="recommendation-desc" style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:15px; flex-grow:1;">Prepare for upcoming contests with these problems similar to recent contest questions.</p><button class="solve-btn" data-text="Start" style="align-self: flex-start; margin-top: auto;">Start</button></div>
+            </div></div>
+        </section>
+
+        <section class="weakness-analysis">
+            <h2 class="section-title" data-original-text="Weakness Analysis"><i class="fas fa-search"></i>// Weakness Analysis</h2>
+            <div class="card">
+                <div class="card-header"><h3 class="card-title">Topic Performance</h3><button class="toggle-btn" style="background:none; border:none; color:var(--text-secondary)"><i class="fas fa-expand"></i></button></div>
+                <div class="weakness-item" style="display:flex; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom: 1px solid var(--border-color);"><div class="weakness-name">Dynamic Programming</div><div class="weakness-bar"><div class="weakness-progress" style="width: 85%; height:100%; background-color: var(--accent-green);"></div></div><div class="weakness-value">85%</div></div>
+                <div class="weakness-item" style="display:flex; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom: 1px solid var(--border-color);"><div class="weakness-name">Graph Theory</div><div class="weakness-bar"><div class="weakness-progress" style="width: 65%; height:100%; background-color: var(--accent-yellow);"></div></div><div class="weakness-value">65%</div></div>
+                <div class="weakness-item" style="display:flex; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom: 1px solid var(--border-color);"><div class="weakness-name">Greedy Algorithms</div><div class="weakness-bar"><div class="weakness-progress" style="width: 78%; height:100%; background-color: var(--accent-green);"></div></div><div class="weakness-value">78%</div></div>
+                <div class="weakness-item" style="display:flex; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom: 1px solid var(--border-color);"><div class="weakness-name">Number Theory</div><div class="weakness-bar"><div class="weakness-progress" style="width: 92%; height:100%; background-color: var(--accent-green);"></div></div><div class="weakness-value">92%</div></div>
+                <div class="weakness-item" style="display:flex; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom: 1px solid var(--border-color);"><div class="weakness-name">Data Structures</div><div class="weakness-bar"><div class="weakness-progress" style="width: 88%; height:100%; background-color: var(--accent-green);"></div></div><div class="weakness-value">88%</div></div>
+                <div class="chart-container" style="height:250px"><canvas id="weaknessChart"></canvas></div>
+            </div>
+        </section>
+        
+         <h2 class="section-title centered-title games-section-title" data-original-text="Bored?">// Bored?</h2>
+        <section class="games-section">
+            <div class="main-grid">
+                <div class="mini-game">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">// Glitch Snake</h3></div>
+                        <canvas id="game-canvas" width="400" height="300"></canvas>
+                         <p class="game-description">Use arrow keys or WASD to navigate the snake. Eat the red squares to grow. Don't hit the walls or yourself!</p>
+                        <div class="game-controls">
+                            <div class="game-score">SCORE: <span id="game-score">0</span></div>
+                            <div>
+                                <button class="review-btn game-btn" id="start-game-btn" data-text="Start">Start</button>
+                                <button class="review-btn game-btn" id="reset-game-btn" data-text="Reset">Reset</button>
+                            </div>
+                        </div>
+                        <div class="scoreboard">
+                            <h4>High Scores</h4>
+                            <ol class="scoreboard-list">
+                                <li><span class="rank">1.</span> <span>user_one</span> <span class="score">1250</span></li>
+                                <li><span class="rank">2.</span> <span>snowybacon</span> <span class="score">980</span></li>
+                                <li><span class="rank">3.</span> <span>glitch_master</span> <span class="score">850</span></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mini-game">
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">// Tower of Hanoi</h3></div>
+                        <canvas id="hanoi-canvas" width="400" height="240"></canvas>
+                        <div class="hanoi-button-bar">
+                            <button class="review-btn hanoi-tower-btn" data-tower="0" data-text="Tower 1">Tower 1</button>
+                            <button class="review-btn hanoi-tower-btn" data-tower="1" data-text="Tower 2">Tower 2</button>
+                            <button class="review-btn hanoi-tower-btn" data-tower="2" data-text="Tower 3">Tower 3</button>
+                        </div>
+                        <p class="description game-description">Use the buttons to select a tower to pick up from or place a disk on.</p>
+                        <div class="game-controls">
+                            <div class="hanoi-info">MOVES: <span id="hanoi-moves">0</span></div>
+                            <div class="hanoi-controls">
+                                <label for="disk-count">Disks:</label>
+                                <select id="disk-count" class="hanoi-btn">
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5" selected>5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                                <button class="review-btn hanoi-btn" id="reset-hanoi-btn" data-text="Reset">Reset</button>
+                            </div>
+                        </div>
+                         <div class="scoreboard">
+                            <h4>Best Scores (5 Disks)</h4>
+                            <ol class="scoreboard-list">
+                                <li><span class="rank">1.</span> <span>recursive_mind</span> <span class="score">31 moves</span></li>
+                                <li><span class="rank">2.</span> <span>snowybacon</span> <span class="score">35 moves</span></li>
+                                <li><span class="rank">3.</span> <span>user_three</span> <span class="score">42 moves</span></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content" style="text-align:center;">
+                <div class="footer-logo">
+                    <i class="fas fa-code" style="color:var(--accent-green)"></i>
+                    Code<span>Arena</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">Home</a><a href="#">Dashboard</a><a href="#">Problems</a><a href="#">Contests</a>
+                    <a href="#">Blog</a><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a>
+                </div>
+                <div class="social-icons" style="margin-bottom:2rem;">
+                    <a href="#"><i class="fab fa-github"></i></a><a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a><a href="#"><i class="fab fa-discord"></i></a>
+                </div>
+                <div class="copyright"> &copy; 2025 CodeArena. All rights reserved. </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Matrix-style background from home3.html ---
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = '01$%&/()=*+-#@<>';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = Array.from({ length: columns }).fill(1);
+
+            function draw() {
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-green');
+                ctx.font = `${fontSize}px monospace`;
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }
+            setInterval(draw, 33);
+
+             // --- Binary Clock ---
+            function updateBinaryClock() {
+                const clock = document.getElementById('binary-clock');
+                if (!clock) return;
+                const now = new Date();
+                const hours = now.getHours().toString(2).padStart(6, '0');
+                const minutes = now.getMinutes().toString(2).padStart(6, '0');
+                const seconds = now.getSeconds().toString(2).padStart(6, '0');
+                clock.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            setInterval(updateBinaryClock, 1000);
+            updateBinaryClock();
+
+            // --- Text Scramble Effect ---
+            const scrambleText = (element) => {
+                const chars = '!<>-_\\/[]{}—=+*^?#________';
+                const originalText = element.getAttribute('data-original-text');
+                if (!originalText || element.isScrambling) return;
+                element.isScrambling = true;
+                let frame = 0;
+                const framesPerLetter = 4;
+                const totalFrames = originalText.length * framesPerLetter;
+                const interval = setInterval(() => {
+                    let newText = '';
+                    for (let i = 0; i < originalText.length; i++) {
+                        const progress = Math.floor(frame / framesPerLetter);
+                        if (i <= progress) newText += originalText[i];
+                        else newText += chars[Math.floor(Math.random() * chars.length)];
+                    }
+                    element.lastChild.textContent = " " + newText; // update only the text node
+                    frame++;
+                    if (frame >= totalFrames) {
+                        element.lastChild.textContent = " " + originalText;
+                        clearInterval(interval);
+                        element.isScrambling = false;
+                    }
+                }, 20);
+            };
+
+            document.querySelectorAll('.section-title').forEach(title => {
+                const textNode = title.lastChild;
+                if(textNode && textNode.nodeType === Node.TEXT_NODE) {
+                    const originalText = textNode.textContent.trim().replace('// ','');
+                    title.setAttribute('data-original-text', originalText);
+                    title.addEventListener('mouseover', () => scrambleText(title));
+                }
+            });
+
+            // --- Platform Tabs Logic from dashboard.html ---
+            const platformTabs = document.querySelectorAll('.platform-tab');
+            platformTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    platformTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.querySelectorAll('.platform-content').forEach(content => content.classList.remove('active'));
+                    const platformId = tab.getAttribute('data-platform');
+                    document.getElementById(`${platformId}-content`).classList.add('active');
+                });
+            });
+
+            // --- Charts Logic ---
+            const style = getComputedStyle(document.body);
+            const gridColor = style.getPropertyValue('--border-color');
+            const textColor = style.getPropertyValue('--text-secondary');
+            const monoFont = "'Fira Code', monospace";
+            
+            const chartOptions = (isRadar = false) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: isRadar ? {
+                    r: {
+                        angleLines: { color: gridColor },
+                        grid: { color: gridColor },
+                        pointLabels: { color: textColor, font: { family: monoFont } },
+                        ticks: { display: false, backdropColor: 'transparent' },
+                        suggestedMin: 0, suggestedMax: 100
+                    }
+                } : {
+                    y: { beginAtZero: false, grid: { color: gridColor }, ticks: { color: textColor, font: { family: monoFont } } },
+                    x: { grid: { display: false }, ticks: { color: textColor, font: { family: monoFont } } }
+                }
+            });
+            
+            new Chart(document.getElementById('cfChart').getContext('2d'), { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'], datasets: [{ label: 'Codeforces Rating', data: [1420, 1480, 1520, 1490, 1560, 1620, 1580, 1645, 1670], borderColor: style.getPropertyValue('--cf-color'), backgroundColor: 'rgba(255, 60, 60, 0.1)', tension: 0.3, fill: true }] }, options: chartOptions() });
+            new Chart(document.getElementById('lcChart').getContext('2d'), { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'], datasets: [{ label: 'LeetCode Rating', data: [1850, 1920, 1960, 2010, 2050, 2080, 2120, 2145, 2160], borderColor: style.getPropertyValue('--lc-color'), backgroundColor: 'rgba(255, 200, 60, 0.1)', tension: 0.3, fill: true }] }, options: chartOptions() });
+            new Chart(document.getElementById('ccChart').getContext('2d'), { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'], datasets: [{ label: 'CodeChef Rating', data: [1750, 1780, 1810, 1800, 1840, 1860, 1850, 1875, 1880], borderColor: style.getPropertyValue('--cc-color'), backgroundColor: 'rgba(160, 125, 74, 0.1)', tension: 0.3, fill: true }] }, options: chartOptions() });
+            new Chart(document.getElementById('agChart').getContext('2d'), { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'], datasets: [{ label: 'AlgoGym Score', data: [5120, 5780, 6240, 6850, 7120, 7450, 7980, 8320, 8745], borderColor: style.getPropertyValue('--ag-color'), backgroundColor: 'rgba(85, 221, 236, 0.1)', tension: 0.3, fill: true }] }, options: chartOptions() });
+            new Chart(document.getElementById('weaknessChart').getContext('2d'), { type: 'radar', data: { labels: ['DP', 'Graphs', 'Greedy', 'Num Theory', 'DS', 'Strings'], datasets: [{ label: 'Performance (%)', data: [85, 65, 78, 92, 88, 75], backgroundColor: 'rgba(0, 255, 156, 0.2)', borderColor: style.getPropertyValue('--accent-green'), pointBackgroundColor: style.getPropertyValue('--accent-green'), pointBorderColor: '#fff' }] }, options: chartOptions(true) });
+       
+            // --- Problem Types Doughnut Chart ---
+            const problemTypesData = {
+                labels: ['Graphs', 'DP', 'Data Structures', 'Greedy', 'Math', 'Strings'],
+                datasets: [{
+                    label: 'Problems Solved',
+                    data: [310, 250, 220, 180, 157, 130],
+                    backgroundColor: [
+                        '#00ff9c', '#00a2ff', '#d96dff', '#ffc83c', '#ff3c3c', '#55ddec'
+                    ],
+                    borderColor: '#101010',
+                    borderWidth: 4,
+                    hoverOffset: 10,
+                    // Custom data for tooltips
+                    platformBreakdown: [
+                        { cf: 120, lc: 100, cc: 70, ac: 20 }, // Graphs
+                        { cf: 90, lc: 90, cc: 50, ac: 20 },  // DP
+                        { cf: 80, lc: 85, cc: 45, ac: 10 },  // Data Structures
+                        { cf: 70, lc: 60, cc: 40, ac: 10 },  // Greedy
+                        { cf: 60, lc: 50, cc: 37, ac: 10 },  // Math
+                        { cf: 50, lc: 47, cc: 23, ac: 10 },  // Strings
+                    ]
+                }]
+            };
+
+            new Chart(document.getElementById('problemTypesChart').getContext('2d'), {
+                type: 'doughnut',
+                data: problemTypesData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                font: { family: monoFont },
+                                padding: 15,
+                                usePointStyle: true,
+                            }
+                        },
+                        tooltip: {
+                            enabled: false, // Disable default tooltip
+                            external: function(context) {
+                                // Tooltip Element
+                                let tooltipEl = document.getElementById('chartjs-tooltip');
+
+                                // Create element on first render
+                                if (!tooltipEl) {
+                                    tooltipEl = document.createElement('div');
+                                    tooltipEl.id = 'chartjs-tooltip';
+                                    tooltipEl.innerHTML = '<table></table>';
+                                    document.body.appendChild(tooltipEl);
+                                }
+
+                                // Hide if no tooltip
+                                const tooltipModel = context.tooltip;
+                                if (tooltipModel.opacity === 0) {
+                                    tooltipEl.style.opacity = 0;
+                                    return;
+                                }
+
+                                // Set Text
+                                if (tooltipModel.body) {
+                                    const titleLines = tooltipModel.title || [];
+                                    const bodyLines = tooltipModel.body.map(b => b.lines);
+
+                                    let innerHtml = '<thead>';
+
+                                    titleLines.forEach(function(title) {
+                                        innerHtml += '<tr><th style="font-family: var(--font-mono); color: var(--accent-green);">' + title + '</th></tr>';
+                                    });
+                                    innerHtml += '</thead><tbody>';
+
+                                    bodyLines.forEach(function(body, i) {
+                                        const breakdown = context.chart.data.datasets[0].platformBreakdown[tooltipModel.dataPoints[i].dataIndex];
+                                        const total = context.chart.data.datasets[0].data[tooltipModel.dataPoints[i].dataIndex];
+                                        
+                                        innerHtml += '<tr><td style="font-family: var(--font-mono);">' + `Total: ${total}` + '</td></tr>';
+                                        innerHtml += '<tr><td style="font-family: var(--font-mono); padding-top: 5px; color: var(--text-secondary);">// Breakdown</td></tr>';
+                                        innerHtml += '<tr><td>' + `&gt; CF: ${breakdown.cf}` + '</td></tr>';
+                                        innerHtml += '<tr><td>' + `&gt; LC: ${breakdown.lc}` + '</td></tr>';
+                                        innerHtml += '<tr><td>' + `&gt; CC: ${breakdown.cc}` + '</td></tr>';
+                                        innerHtml += '<tr><td>' + `&gt; AC: ${breakdown.ac}` + '</td></tr>';
+
+                                    });
+                                    innerHtml += '</tbody>';
+
+                                    let tableRoot = tooltipEl.querySelector('table');
+                                    tableRoot.innerHTML = innerHtml;
+                                }
+
+                                const position = context.chart.canvas.getBoundingClientRect();
+
+                                // Display, position, and set styles for font
+                                tooltipEl.style.opacity = 1;
+                                tooltipEl.style.position = 'absolute';
+                                tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                                tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+                                tooltipEl.style.fontFamily = 'var(--font-mono)';
+                                tooltipEl.style.fontSize = '12px';
+                                tooltipEl.style.background = 'var(--dark-bg)';
+                                tooltipEl.style.color = 'var(--text-primary)';
+                                tooltipEl.style.borderRadius = '4px';
+                                tooltipEl.style.padding = '10px';
+                                tooltipEl.style.pointerEvents = 'none';
+                                tooltipEl.style.border = '1px solid var(--border-color)';
+                                tooltipEl.style.transition = 'all 0.2s';
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Snake Game Logic ---
+            const gameCanvas = document.getElementById('game-canvas');
+            const gameCtx = gameCanvas.getContext('2d');
+            const scoreElement = document.getElementById('game-score');
+            const startBtn = document.getElementById('start-game-btn');
+            const resetBtn = document.getElementById('reset-game-btn');
+            
+            const gridSize = 20;
+            let snake = [{ x: 10, y: 10 }];
+            let apple = { x: 15, y: 15 };
+            let velocity = { x: 0, y: 0 };
+            let score = 0;
+            let gameInterval = null;
+
+            function drawGameObjects() {
+                gameCtx.fillStyle = '#000';
+                gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+                gameCtx.fillStyle = 'red';
+                gameCtx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize - 2, gridSize - 2);
+
+                gameCtx.fillStyle = 'lime';
+                snake.forEach(segment => {
+                    gameCtx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+                });
+            }
+
+            function updateGame() {
+                const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+                if (head.x < 0 || head.x >= gameCanvas.width / gridSize || head.y < 0 || head.y >= gameCanvas.height / gridSize) { return resetGame(); }
+                for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) { return resetGame(); } }
+                snake.unshift(head);
+                if (head.x === apple.x && head.y === apple.y) {
+                    score++;
+                    scoreElement.textContent = score;
+                    placeApple();
+                } else { snake.pop(); }
+                drawGameObjects();
+            }
+            
+            function placeApple() {
+                apple.x = Math.floor(Math.random() * (gameCanvas.width / gridSize));
+                apple.y = Math.floor(Math.random() * (gameCanvas.height / gridSize));
+            }
+
+            function startGame() {
+                if (gameInterval) return;
+                if(velocity.x === 0 && velocity.y === 0) velocity = { x: 1, y: 0 };
+                gameInterval = setInterval(updateGame, 100);
+            }
+            
+            function resetGame() {
+                clearInterval(gameInterval);
+                gameInterval = null;
+                snake = [{ x: 10, y: 10 }];
+                velocity = { x: 0, y: 0 };
+                score = 0;
+                scoreElement.textContent = score;
+                placeApple();
+                drawGameObjects();
+            }
+            
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', resetGame);
+            
+            window.addEventListener('keydown', e => {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                    e.preventDefault();
+                }
+                switch (e.key.toLowerCase()) {
+                    case 'arrowup': case 'w': if (velocity.y === 0) velocity = { x: 0, y: -1 }; break;
+                    case 'arrowdown': case 's': if (velocity.y === 0) velocity = { x: 0, y: 1 }; break;
+                    case 'arrowleft': case 'a': if (velocity.x === 0) velocity = { x: -1, y: 0 }; break;
+                    case 'arrowright': case 'd': if (velocity.x === 0) velocity = { x: 1, y: 0 }; break;
+                }
+            });
+            
+            resetGame(); 
+            
+            // --- Tower of Hanoi Logic ---
+            const hanoiCanvas = document.getElementById('hanoi-canvas');
+            const hanoiCtx = hanoiCanvas.getContext('2d');
+            const movesElement = document.getElementById('hanoi-moves');
+            const diskSelect = document.getElementById('disk-count');
+            const resetHanoiBtn = document.getElementById('reset-hanoi-btn');
+            const towerButtons = document.querySelectorAll('.hanoi-tower-btn');
+            
+            let numDisks = 5;
+            let towers = [[], [], []];
+            let selectedDisk = null;
+            let fromTower = -1;
+            let moves = 0;
+            let gameWon = false;
+            const diskHeight = 15;
+            const towerX = [hanoiCanvas.width / 4, hanoiCanvas.width / 2, hanoiCanvas.width * 3 / 4];
+            const towerBaseY = hanoiCanvas.height - 20; // Adjusted for button space
+            const diskColors = ['#00ff9c', '#00a2ff', '#d96dff', '#ffc83c', '#ff3c3c', '#55ddec', '#e0e0e0'];
+            let hanoiDiskPatterns = [];
+            let shuffledColors = [];
+
+            function createHanoiPatterns() {
+                hanoiDiskPatterns = [];
+                shuffledColors = [...diskColors].sort(() => Math.random() - 0.5);
+
+                shuffledColors.forEach(color => {
+                    const patternCanvas = document.createElement('canvas');
+                    const patternCtx = patternCanvas.getContext('2d');
+                    patternCanvas.width = 8; patternCanvas.height = 8;
+                    patternCtx.fillStyle = '#0a0a0a';
+                    patternCtx.fillRect(0,0,8,8);
+                    patternCtx.strokeStyle = color;
+                    patternCtx.lineWidth = 1;
+                    patternCtx.beginPath();
+                    patternCtx.moveTo(0, 8);
+                    patternCtx.lineTo(8, 0);
+                    patternCtx.stroke();
+                    hanoiDiskPatterns.push(hanoiCtx.createPattern(patternCanvas, 'repeat'));
+                });
+            }
+
+            function initHanoi() {
+                moves = 0;
+                gameWon = false;
+                movesElement.textContent = moves;
+                towers = [[], [], []];
+                numDisks = parseInt(diskSelect.value);
+                
+                for (let i = numDisks; i >= 1; i--) {
+                    towers[0].push(i);
+                }
+                
+                selectedDisk = null;
+                fromTower = -1;
+                towerButtons.forEach(btn => btn.classList.remove('selected'));
+                createHanoiPatterns();
+                drawHanoi();
+            }
+
+            function drawHanoi() {
+                hanoiCtx.fillStyle = '#0a0a0a';
+                hanoiCtx.fillRect(0, 0, hanoiCanvas.width, hanoiCanvas.height);
+               
+                hanoiCtx.strokeStyle = 'var(--accent-blue)';
+                hanoiCtx.shadowColor = 'var(--accent-blue)';
+                hanoiCtx.shadowBlur = 10;
+                hanoiCtx.lineWidth = 3;
+                towerX.forEach(x => {
+                    hanoiCtx.beginPath();
+                    hanoiCtx.moveTo(x, 30);
+                    hanoiCtx.lineTo(x, towerBaseY);
+                    hanoiCtx.stroke();
+                });
+                hanoiCtx.beginPath();
+                hanoiCtx.moveTo(20, towerBaseY);
+                hanoiCtx.lineTo(hanoiCanvas.width - 20, towerBaseY);
+                hanoiCtx.stroke();
+                hanoiCtx.shadowBlur = 0;
+
+                towers.forEach((tower, towerIndex) => {
+                    tower.forEach((diskSize, diskIndex) => {
+                        const diskWidth = diskSize * 14 + 20;
+                        const x = towerX[towerIndex] - diskWidth / 2;
+                        const y = towerBaseY - (diskIndex + 1) * diskHeight;
+                        
+                        hanoiCtx.fillStyle = hanoiDiskPatterns[diskSize - 1] || '#ccc';
+                        hanoiCtx.fillRect(x, y, diskWidth, diskHeight);
+                        
+                        hanoiCtx.strokeStyle = shuffledColors[diskSize - 1] || '#fff';
+                        hanoiCtx.lineWidth = 2;
+                        hanoiCtx.strokeRect(x, y, diskWidth, diskHeight);
+                    });
+                });
+                
+                if (selectedDisk) {
+                     const diskWidth = selectedDisk * 14 + 20;
+                     const x = (hanoiCanvas.width / 2) - (diskWidth / 2);
+                     const y = 5;
+                     
+                     hanoiCtx.fillStyle = 'var(--accent-yellow)';
+                     hanoiCtx.font = '12px var(--font-mono)';
+                     hanoiCtx.textAlign = 'center';
+                     hanoiCtx.fillText(`[Holding Disk ${selectedDisk}]`, hanoiCanvas.width / 2, 12);
+                     
+                     hanoiCtx.fillStyle = hanoiDiskPatterns[selectedDisk - 1];
+                     hanoiCtx.strokeStyle = shuffledColors[selectedDisk - 1];
+                     hanoiCtx.shadowColor = shuffledColors[selectedDisk - 1];
+                     hanoiCtx.shadowBlur = 25;
+                     hanoiCtx.fillRect(x, y + 10, diskWidth, diskHeight);
+                     hanoiCtx.strokeRect(x, y + 10, diskWidth, diskHeight);
+                     hanoiCtx.shadowBlur = 0;
+                }
+            }
+
+            function handleTowerClick(towerIndex) {
+                if (gameWon) return;
+
+                if (selectedDisk === null) {
+                    // Trying to pick up a disk
+                    if (towers[towerIndex].length > 0) {
+                        selectedDisk = towers[towerIndex].pop();
+                        fromTower = towerIndex;
+                        towerButtons[fromTower].classList.add('selected');
+                    }
+                } else {
+                    // Trying to place a disk
+                    const targetTower = towers[towerIndex];
+                    if (targetTower.length === 0 || targetTower[targetTower.length - 1] > selectedDisk) {
+                        // Valid move
+                        targetTower.push(selectedDisk);
+                        if (fromTower !== towerIndex) {
+                            moves++;
+                            movesElement.textContent = moves;
+                        }
+                    } else {
+                        // Invalid move, return disk to original tower
+                        towers[fromTower].push(selectedDisk);
+                    }
+                    
+                    // Reset selection state
+                    towerButtons[fromTower].classList.remove('selected');
+                    selectedDisk = null;
+                    fromTower = -1;
+                }
+
+                drawHanoi();
+                checkWin();
+            }
+
+            towerButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const towerIndex = parseInt(button.dataset.tower);
+                    handleTowerClick(towerIndex);
+                });
+            });
+            
+            function checkWin() {
+                if (towers[1].length === numDisks || towers[2].length === numDisks) {
+                    gameWon = true;
+                    towerButtons.forEach(btn => btn.classList.remove('selected'));
+                    hanoiCtx.fillStyle = 'var(--accent-green)';
+                    hanoiCtx.shadowColor = 'var(--accent-green)';
+                    hanoiCtx.shadowBlur = 20;
+                    hanoiCtx.font = '24px var(--font-mono)';
+                    hanoiCtx.textAlign = 'center';
+                    hanoiCtx.fillText('// SOLVED', hanoiCanvas.width / 2, hanoiCanvas.height / 3);
+                    hanoiCtx.shadowBlur = 0;
+                    
+                    selectedDisk = null;
+                    fromTower = -1;
+                }
+            }
+            
+            diskSelect.addEventListener('change', initHanoi);
+            resetHanoiBtn.addEventListener('click', initHanoi);
+            
+            initHanoi();
+
+            // Mobile Menu Logic
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileNav = document.getElementById('mobileNav');
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileNav.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>
+
